@@ -3,3 +3,5 @@
 .env
 *.mbtiles
 *.osm.pbf
+.vs/
+**/*.csproj.user

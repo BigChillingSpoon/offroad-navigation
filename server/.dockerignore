@@ -1,0 +1,18 @@
+# Build artifacts
+**/bin/
+**/obj/
+
+# Git
+.git
+.gitignore
+
+# Local tooling
+.vs
+.vscode
+
+# Node (TODO in future)
+node_modules
+
+# Docs
+README.md
+LICENSE
