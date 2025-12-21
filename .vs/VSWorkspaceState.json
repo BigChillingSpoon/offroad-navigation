@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\docker",
+    "\\mobile",
+    "\\routing",
+    "\\server",
+    "\\server\\Offroad.Application"
+  ],
+  "SelectedNode": "\\server\\Offroad.Application\\Class1.cs",
+  "PreviewInSolutionExplorer": false
+}
