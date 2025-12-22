@@ -3,27 +3,20 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Api", "Offroad.Api\Offroad.Api.csproj", "{B2282B74-11E7-41AE-9191-0A2429D718F3}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Domain", "Offroad.Domain\Offroad.Domain.csproj", "{24F1484B-8462-4FE4-BB5F-D263A3B4168F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Application", "Offroad.Application\Offroad.Application.csproj", "{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Infrastructure", "Offroad.Infrastructure\Offroad.Infrastructure.csproj", "{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Api", "Offroad.Api\Offroad.Api.csproj", "{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
-	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B2282B74-11E7-41AE-9191-0A2429D718F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B2282B74-11E7-41AE-9191-0A2429D718F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B2282B74-11E7-41AE-9191-0A2429D718F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B2282B74-11E7-41AE-9191-0A2429D718F3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -36,5 +29,12 @@ Global
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal

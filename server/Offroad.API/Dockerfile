@@ -1,33 +1,22 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+# ===== BUILD STAGE =====
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
 
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
-FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
-USER $APP_UID
+COPY Offroad.Api/Offroad.Api.csproj Offroad.Api/
+COPY Offroad.Application/Offroad.Application.csproj Offroad.Application/
+COPY Offroad.Domain/Offroad.Domain.csproj Offroad.Domain/
+COPY Offroad.Infrastructure/Offroad.Infrastructure.csproj Offroad.Infrastructure/
+
+RUN dotnet restore Offroad.Api/Offroad.Api.csproj
+
+COPY . .
+WORKDIR /src/Offroad.Api
+RUN dotnet publish -c Release -o /app/publish
+
+# ===== RUNTIME STAGE =====
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 EXPOSE 8080
-EXPOSE 8081
 
-
-# This stage is used to build the service project
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-COPY ["Offroad.Api/Offroad.Api.csproj", "Offroad.Api/"]
-COPY ["Offroad.Application/Offroad.Application.csproj", "Offroad.Application/"]
-COPY ["Offroad.Domain/Offroad.Domain.csproj", "Offroad.Domain/"]
-COPY ["Offroad.Infrastructure/Offroad.Infrastructure.csproj", "Offroad.Infrastructure/"]
-RUN dotnet restore "./Offroad.Api/Offroad.Api.csproj"
-COPY . .
-WORKDIR "/src/Offroad.Api"
-RUN dotnet build "./Offroad.Api.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-# This stage is used to publish the service project to be copied to the final stage
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-RUN dotnet publish "./Offroad.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
-
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
-FROM base AS final
-WORKDIR /app
-COPY --from=publish /app/publish .
+COPY --from=build /app/publish .
 ENTRYPOINT ["dotnet", "Offroad.Api.dll"]

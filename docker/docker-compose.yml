@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: ../server
+      dockerfile: Offroad.Api/Dockerfile
+    container_name: offroad-api
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+    depends_on:
+      - postgres
+      - graphhopper
+
+  postgres:
+    image: postgis/postgis:16-3.4
+    container_name: offroad-postgres
+    environment:
+      POSTGRES_DB: offroad
+      POSTGRES_USER: offroad
+      POSTGRES_PASSWORD: offroad
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  graphhopper:
+    image: israelhikingmap/graphhopper
+    container_name: offroad-graphhopper
+    ports:
+      - "8989:8989"
+    volumes:
+      - ../routing/graphhopper/data:/data
+    environment:
+      JAVA_OPTS: >
+        -Xmx2g
+        -Ddw.graphhopper.location=/data/default-gh
+        -Ddw.graphhopper.datareader.file=/data/czech-republic-latest.osm.pbf
+
+volumes:
+  pgdata:

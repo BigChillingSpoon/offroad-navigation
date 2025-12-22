@@ -5,3 +5,4 @@
 *.osm.pbf
 .vs/
 **/*.csproj.user
+routing/graphhopper/data/
