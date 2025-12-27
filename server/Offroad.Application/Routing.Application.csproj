@@ -1,8 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\Offroad.Domain\Offroad.Domain.csproj" />
-    <ProjectReference Include="..\Offroad.Application\Offroad.Application.csproj" />
+    <ProjectReference Include="..\Offroad.Domain\Routing.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Routing\Calculation\" />
   </ItemGroup>
 
   <PropertyGroup>

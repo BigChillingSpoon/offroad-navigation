@@ -3,13 +3,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Domain", "Offroad.Domain\Offroad.Domain.csproj", "{24F1484B-8462-4FE4-BB5F-D263A3B4168F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Routing.Domain", "Offroad.Domain\Routing.Domain.csproj", "{24F1484B-8462-4FE4-BB5F-D263A3B4168F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Application", "Offroad.Application\Offroad.Application.csproj", "{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Infrastructure", "Offroad.Infrastructure\Offroad.Infrastructure.csproj", "{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Routing.Infrastructure", "Offroad.Infrastructure\Routing.Infrastructure.csproj", "{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Api", "Offroad.Api\Offroad.Api.csproj", "{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Routing", "Routing", "{AE98D356-DB29-469B-B40F-4BD1130CA9B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Routing.Application", "Routing.Application\Routing.Application.csproj", "{0AEF336E-3777-4FF0-9F59-12EA727C3648}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{05216B39-0C8C-46FC-AC6A-2B054ED155A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Core", "Offroad.Core\Offroad.Core.csproj", "{09D39471-2F46-4F86-8A00-38A9B5DC0E07}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,10 +27,6 @@ Global
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{24F1484B-8462-4FE4-BB5F-D263A3B4168F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0F560BBD-F5AA-4A14-954D-F553EBA23FFE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -33,8 +35,22 @@ Global
 		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DAC2CA54-5882-45DC-BA58-5D4F213BE0AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0AEF336E-3777-4FF0-9F59-12EA727C3648}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0AEF336E-3777-4FF0-9F59-12EA727C3648}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0AEF336E-3777-4FF0-9F59-12EA727C3648}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0AEF336E-3777-4FF0-9F59-12EA727C3648}.Release|Any CPU.Build.0 = Release|Any CPU
+		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{24F1484B-8462-4FE4-BB5F-D263A3B4168F} = {AE98D356-DB29-469B-B40F-4BD1130CA9B2}
+		{3F7A33F0-2E5E-47F4-A63F-FA0759588BD2} = {AE98D356-DB29-469B-B40F-4BD1130CA9B2}
+		{AE98D356-DB29-469B-B40F-4BD1130CA9B2} = {05216B39-0C8C-46FC-AC6A-2B054ED155A6}
+		{0AEF336E-3777-4FF0-9F59-12EA727C3648} = {AE98D356-DB29-469B-B40F-4BD1130CA9B2}
 	EndGlobalSection
 EndGlobal
