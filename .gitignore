@@ -6,3 +6,4 @@
 .vs/
 **/*.csproj.user
 routing/graphhopper/data/
+/.claude
