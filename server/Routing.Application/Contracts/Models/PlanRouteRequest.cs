@@ -1,3 +1,5 @@
+using Routing.Domain.Enums;
+
 namespace Routing.Application.Contracts.Models
 {
     public sealed record PlanRouteRequest
@@ -8,5 +10,6 @@ namespace Routing.Application.Contracts.Models
         public required double EndLongitude { get; init; }
         public bool AllowPrivateRoads { get; init; }
         public bool AllowGates { get; init; }
+        public RouteBalance RouteBalance { get; init; } = RouteBalance.Balanced;
     }
 }

@@ -17,7 +17,8 @@ namespace Routing.Application.Mappings
             => new()
             {
                 AllowPrivateRoads = request.AllowPrivateRoads,
-                AllowGates = request.AllowGates
+                AllowGates = request.AllowGates,
+                RouteBalance = request.RouteBalance
             };
 
         public static LoopPreferences ToPreferences(this FindLoopsRequest request)
