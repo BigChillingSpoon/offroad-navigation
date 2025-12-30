@@ -58,12 +58,12 @@ namespace Offroad.Api.Controllers
             );
         }
         // todo add soft delete
-        [HttpDelete("{id:guid}")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpDelete]
+        public async Task<IActionResult> Delete([FromBody] DeleteRequest request)
         {
-            var result = await _routes.DeleteAsync(id, HttpContext.RequestAborted);
+            var result = await _routes.DeleteAsync(request.Id, HttpContext.RequestAborted);
 
-            return result.Match(
+            return result.Match<IActionResult>(
                 ok => NoContent(),
                 err => err.Type switch
                 {

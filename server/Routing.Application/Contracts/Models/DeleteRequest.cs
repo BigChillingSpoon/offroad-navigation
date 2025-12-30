@@ -1,8 +1,7 @@
 namespace Routing.Application.Contracts.Models
 {
     public sealed record DeleteRequest
-    (
-        Guid Id
-    );
+    {
+        public required Guid Id { get; init; }
+    }
 }
-

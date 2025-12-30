@@ -13,8 +13,8 @@
 
   <ItemGroup>
     <Folder Include="Abstractions\" />
-    <Folder Include="Commands\" />
-    <Folder Include="Queries\" />
+    <Folder Include="Routes\Commands\" />
+    <Folder Include="Routes\Queries\" />
   </ItemGroup>
 
 </Project>

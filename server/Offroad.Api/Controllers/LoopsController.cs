@@ -62,7 +62,7 @@ namespace Offroad.Api.Controllers
         {
             var result = await _loopsModule.DeleteAsync(request.Id, HttpContext.RequestAborted);
 
-            return result.Match(
+            return result.Match<IActionResult>(
                 ok => NoContent(),
                 err => err.Type switch
                 {
