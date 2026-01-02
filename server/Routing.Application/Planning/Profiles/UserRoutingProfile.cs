@@ -1,6 +1,4 @@
-﻿using Routing.Domain.Enums;
-
-namespace Routing.Application.Planning.Profiles
+﻿namespace Routing.Application.Planning.Profiles
 {
     public sealed record UserRoutingProfile
     {

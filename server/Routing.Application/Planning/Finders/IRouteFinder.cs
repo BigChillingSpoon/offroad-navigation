@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Routing.Application.Planning.Models
+namespace Routing.Application.Planning.Finders
 {
-    internal class Segment
+    internal class IRouteFinder
     {
     }
 }

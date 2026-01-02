@@ -3,6 +3,7 @@ using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
 using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Planner;
+using Routing.Domain.Enums;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 
@@ -19,16 +20,17 @@ namespace Routing.Application.Loops.Commands
             _planner = planner;
         }
 
-        public async Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct)
+        public async Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct)
         {
-            var route = Route.Create(request.Name, isLoop: true);
+            var loopPlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters, request.Duration.TotalSeconds);
+            var loop = Trip.Create(request.Name, TripType.Loop, loopPlan);
 
-            await _repository.AddAsync(route, ct);
+            await _repository.AddAsync(loop, ct);
 
-            return route.Id;
+            return loop.Id;
         }
 
-        public async Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct)
+        public async Task<Result<bool>> DeleteAsyncCommand(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
@@ -40,18 +42,20 @@ namespace Routing.Application.Loops.Commands
             return true;
         }
 
-        public async Task<Result<IReadOnlyList<TripInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
+        public async Task<Result<IReadOnlyList<TripResult>>> FindAsyncCommand(FindLoopsRequest request, CancellationToken ct)
         {
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
             var goal = new LoopGoal();
-            var config = new PlannerSettings();
-            await _planner.PlanAsync(intent, goal, profile, config, ct);
-            // Placeholder - vrátí mock data
-            return new List<TripInfo>
+            var settings = new PlannerSettings();
+            //todo instead of returning from planner we shall return from loopfinder, that returns multiple options
+            var plan = await _planner.PlanAsync(intent, goal, profile, settings, ct);
+            var loop = Trip.Create("Test loop", TripType.Loop, plan);
+            
+            //
+            return new List<TripResult>
             {
-                new TripInfo(Guid.NewGuid(), "Loop Option 1", true, 0, 0, TimeSpan.Zero),
-                new TripInfo(Guid.NewGuid(), "Loop Option 2", true, 0, 0, TimeSpan.Zero)
+                RoutingResultMappings.ToTripResult(loop)
             };
         }
     }

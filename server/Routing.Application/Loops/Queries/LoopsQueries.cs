@@ -1,7 +1,8 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Domain.Repositories;
-
+using Routing.Domain.Enums;
+using Routing.Application.Mappings;
 namespace Routing.Application.Loops.Queries
 {
     internal sealed class LoopsQueries
@@ -13,37 +14,23 @@ namespace Routing.Application.Loops.Queries
             _repository = repository;
         }
 
-        public async Task<Result<TripInfo>> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<Result<TripResult>> GetByIdAsync(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
             if (route is null)
                 return Error.NotFound("Loop", id);
 
-            return new TripInfo(
-                route.Id,
-                route.Name,
-                route.IsLoop,
-                0,
-                0,
-                TimeSpan.Zero
-            );
+            return RoutingResultMappings.ToTripResult(route);
         }
 
-        public async Task<Result<IReadOnlyList<TripInfo>>> GetAllAsync(CancellationToken ct)
+        public async Task<Result<IReadOnlyList<TripResult>>> GetAllAsync(CancellationToken ct)
         {
-            var routes = await _repository.GetAllAsync(ct);
+            var trips = await _repository.GetAllAsync(ct);
 
-            var result = routes
-                .Where(r => r.IsLoop)
-                .Select(r => new TripInfo(
-                    r.Id,
-                    r.Name,
-                    r.IsLoop,
-                    0,
-                    0,
-                    TimeSpan.Zero
-                ))
+            var result = trips
+                .Where(t => t.Type == TripType.Loop)
+                .Select(t => RoutingResultMappings.ToTripResult(t))
                 .ToList();
 
             return result;

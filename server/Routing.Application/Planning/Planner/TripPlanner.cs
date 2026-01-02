@@ -2,12 +2,13 @@
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Profiles;
 using Routing.Application.Planning.State;
+using Routing.Domain.Models;
 
 namespace Routing.Application.Planning.Planner
 {
     public class TripPlanner : ITripPlanner
     {
-        public Task PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
+        public Task<TripPlan> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
             var state = PlannerState.Initialize(intent.Start);
 
@@ -18,7 +19,7 @@ namespace Routing.Application.Planning.Planner
                 //state.update() - updates history, costs, position
             }
             //todo return actual planned route/loop
-            return null;
+            return null;//tripplan will be returned, for now I do not have actual geodata to be returned
         }
     }
 }

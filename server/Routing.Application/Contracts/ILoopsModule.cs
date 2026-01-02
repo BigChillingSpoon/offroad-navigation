@@ -5,10 +5,10 @@ namespace Routing.Application.Contracts
 {
     public interface ILoopsModule
     {
-        Task<Result<TripInfo>> GetByIdAsync(Guid id, CancellationToken ct = default);
-        Task<Result<IReadOnlyList<TripInfo>>> GetAllAsync(CancellationToken ct = default);
+        Task<Result<TripResult>> GetByIdAsync(Guid id, CancellationToken ct = default);
+        Task<Result<IReadOnlyList<TripResult>>> GetAllAsync(CancellationToken ct = default);
         Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct = default);
         Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct = default);
-        Task<Result<IReadOnlyList<TripInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct = default);
+        Task<Result<IReadOnlyList<TripResult>>> FindAsync(FindLoopsRequest request, CancellationToken ct = default);
     }
 }

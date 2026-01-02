@@ -17,19 +17,19 @@ namespace Routing.Application.Loops
             _commands = commands;
         }
 
-        public Task<Result<TripInfo>> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public Task<Result<TripResult>> GetByIdAsync(Guid id, CancellationToken ct = default)
             => _queries.GetByIdAsync(id, ct);
 
-        public Task<Result<IReadOnlyList<TripInfo>>> GetAllAsync(CancellationToken ct = default)
+        public Task<Result<IReadOnlyList<TripResult>>> GetAllAsync(CancellationToken ct = default)
             => _queries.GetAllAsync(ct);
 
         public Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct = default)
-            => _commands.SaveAsync(request, ct);
+            => _commands.SaveAsyncCommand(request, ct);
 
         public Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct = default)
-            => _commands.DeleteAsync(id, ct);
+            => _commands.DeleteAsyncCommand(id, ct);
 
-        public Task<Result<IReadOnlyList<TripInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct = default)
-            => _commands.FindAsync(request, ct);
+        public Task<Result<IReadOnlyList<TripResult>>> FindAsync(FindLoopsRequest request, CancellationToken ct = default)
+            => _commands.FindAsyncCommand(request, ct);
     }
 }
