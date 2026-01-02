@@ -9,7 +9,7 @@ using Routing.Domain.Repositories;
 
 namespace Routing.Application.Routes.Commands
 {
-    internal sealed class RoutesCommands
+    internal sealed class RoutesCommands : IRoutesCommands
     {
         private readonly ITripRepository _repository;
         private readonly ITripPlanner _planner;

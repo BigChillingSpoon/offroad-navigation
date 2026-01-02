@@ -1,0 +1,16 @@
+﻿using Offroad.Core;
+using Routing.Application.Contracts.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Routing.Application.Loops.Queries
+{
+    public interface ILoopQueries
+    {
+        Task<Result<TripResult>> GetByIdAsync(Guid id, CancellationToken ct);
+        Task<Result<IReadOnlyList<TripResult>>> GetAllAsync(CancellationToken ct);
+    }
+}

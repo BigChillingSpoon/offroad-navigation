@@ -6,7 +6,7 @@ using Routing.Domain.Repositories;
 
 namespace Routing.Application.Routes.Queries
 {
-    internal sealed class RoutesQueries
+    internal sealed class RoutesQueries : IRouteQueries
     {
         private readonly ITripRepository _repository;
 

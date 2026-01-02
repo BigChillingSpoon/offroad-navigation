@@ -5,7 +5,7 @@ using Routing.Domain.Enums;
 using Routing.Application.Mappings;
 namespace Routing.Application.Loops.Queries
 {
-    internal sealed class LoopsQueries
+    internal sealed class LoopsQueries : ILoopQueries
     {
         private readonly ITripRepository _repository;
 
