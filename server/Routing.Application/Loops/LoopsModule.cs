@@ -8,10 +8,10 @@ namespace Routing.Application.Loops
 {
     internal sealed class LoopsModule : ILoopsModule
     {
-        private readonly LoopsQueries _queries;
-        private readonly LoopsCommands _commands;
+        private readonly ILoopsQueries _queries;
+        private readonly ILoopsCommands _commands;
 
-        public LoopsModule(LoopsQueries queries, LoopsCommands commands)
+        public LoopsModule(ILoopsQueries queries, ILoopsCommands commands)
         {
             _queries = queries;
             _commands = commands;

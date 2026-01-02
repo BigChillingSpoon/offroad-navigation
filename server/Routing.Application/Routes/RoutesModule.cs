@@ -8,10 +8,10 @@ namespace Routing.Application.Routes
 {
     internal sealed class RoutesModule : IRoutesModule
     {
-        private readonly RoutesQueries _queries;
-        private readonly RoutesCommands _commands;
+        private readonly IRoutesQueries _queries;
+        private readonly IRoutesCommands _commands;
 
-        public RoutesModule(RoutesQueries queries, RoutesCommands commands)
+        public RoutesModule(IRoutesQueries queries, IRoutesCommands commands)
         {
             _queries = queries;
             _commands = commands;
