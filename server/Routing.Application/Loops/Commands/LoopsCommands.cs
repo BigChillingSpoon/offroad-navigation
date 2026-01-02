@@ -3,7 +3,6 @@ using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
 using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Planner;
-using Routing.Application.Routes.Queries;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 
@@ -11,10 +10,10 @@ namespace Routing.Application.Loops.Commands
 {
     internal sealed class LoopsCommands
     {
-        private readonly IRouteRepository _repository;
-        private readonly IRoutePlanner _planner;
+        private readonly ITripRepository _repository;
+        private readonly ITripPlanner _planner;
 
-        public LoopsCommands(IRouteRepository repository, IRoutePlanner planner)
+        public LoopsCommands(ITripRepository repository, ITripPlanner planner)
         {
             _repository = repository;
             _planner = planner;
@@ -41,18 +40,18 @@ namespace Routing.Application.Loops.Commands
             return true;
         }
 
-        public async Task<Result<IReadOnlyList<RouteInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
+        public async Task<Result<IReadOnlyList<TripInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
         {
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
             var goal = new LoopGoal();
-            var config = new PlannerConfig();
+            var config = new PlannerSettings();
             await _planner.PlanAsync(intent, goal, profile, config, ct);
             // Placeholder - vrátí mock data
-            return new List<RouteInfo>
+            return new List<TripInfo>
             {
-                new RouteInfo(Guid.NewGuid(), "Loop Option 1", true, 0, 0, TimeSpan.Zero),
-                new RouteInfo(Guid.NewGuid(), "Loop Option 2", true, 0, 0, TimeSpan.Zero)
+                new TripInfo(Guid.NewGuid(), "Loop Option 1", true, 0, 0, TimeSpan.Zero),
+                new TripInfo(Guid.NewGuid(), "Loop Option 2", true, 0, 0, TimeSpan.Zero)
             };
         }
     }

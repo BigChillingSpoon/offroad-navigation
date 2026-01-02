@@ -17,10 +17,10 @@ namespace Routing.Application.Routes
             _commands = commands;
         }
 
-        public Task<Result<RouteInfo>> GetByIdAsync(Guid id, CancellationToken ct = default)
+        public Task<Result<TripInfo>> GetByIdAsync(Guid id, CancellationToken ct = default)
             => _queries.GetByIdAsync(id, ct);
 
-        public Task<Result<IReadOnlyList<RouteInfo>>> GetAllAsync(CancellationToken ct = default)
+        public Task<Result<IReadOnlyList<TripInfo>>> GetAllAsync(CancellationToken ct = default)
             => _queries.GetAllAsync(ct);
 
         public Task<Result<Guid>> SaveAsync(SaveRouteRequest request, CancellationToken ct = default)
@@ -29,7 +29,7 @@ namespace Routing.Application.Routes
         public Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct = default)
             => _commands.DeleteAsyncCommand(id, ct);
 
-        public Task<Result<RouteInfo>> PlanAsync(PlanRouteRequest request, CancellationToken ct = default)
+        public Task<Result<TripInfo>> PlanAsync(PlanRouteRequest request, CancellationToken ct = default)
             => _commands.PlanAsyncCommand(request, ct);
     }
 }

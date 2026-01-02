@@ -1,14 +1,13 @@
 ﻿using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Models;
 using Routing.Application.Planning.Profiles;
 using Routing.Application.Planning.State;
 
 namespace Routing.Application.Planning.Planner
 {
-    public class RoutePlanner : IRoutePlanner
+    public class TripPlanner : ITripPlanner
     {
-        public Task PlanAsync<TIntent>(TIntent intent, IPlanningGoal<TIntent> goal, UserRoutingProfile profile, PlannerConfig config, CancellationToken ct) where TIntent : IRoutingIntent
+        public Task PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
             var state = PlannerState.Initialize(intent.Start);
 

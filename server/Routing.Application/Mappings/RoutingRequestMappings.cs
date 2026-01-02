@@ -2,7 +2,6 @@ using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Profiles;
 using Routing.Domain.ValueObjects;
 using Routing.Application.Contracts.Models;
-using Routing.Domain.Enums;
 
 namespace Routing.Application.Mappings;
 

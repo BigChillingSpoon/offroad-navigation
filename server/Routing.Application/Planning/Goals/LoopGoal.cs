@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Routing.Application.Planning.Goals
 {
-    public class LoopGoal : IPlanningGoal<LoopIntent>
+    public class LoopGoal : ITripGoal<LoopIntent>
     {
         public bool IsSatisfied(PlannerState state, LoopIntent intent)
         {

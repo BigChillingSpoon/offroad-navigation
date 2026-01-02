@@ -6,21 +6,21 @@ namespace Routing.Application.Routes.Queries
 {
     internal sealed class RoutesQueries
     {
-        private readonly IRouteRepository _repository;
+        private readonly ITripRepository _repository;
 
-        public RoutesQueries(IRouteRepository repository)
+        public RoutesQueries(ITripRepository repository)
         {
             _repository = repository;
         }
 
-        public async Task<Result<RouteInfo>> GetByIdAsync(Guid id, CancellationToken ct)
+        public async Task<Result<TripInfo>> GetByIdAsync(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
             if (route is null)
                 return Error.NotFound("Route", id);
 
-            return new RouteInfo(
+            return new TripInfo(
                 route.Id,
                 route.Name,
                 route.IsLoop,
@@ -30,13 +30,13 @@ namespace Routing.Application.Routes.Queries
             );
         }
 
-        public async Task<Result<IReadOnlyList<RouteInfo>>> GetAllAsync(CancellationToken ct)
+        public async Task<Result<IReadOnlyList<TripInfo>>> GetAllAsync(CancellationToken ct)
         {
             var routes = await _repository.GetAllAsync(ct);
 
             var result = routes
                 .Where(r => !r.IsLoop)
-                .Select(r => new RouteInfo(
+                .Select(r => new TripInfo(
                     r.Id,
                     r.Name,
                     r.IsLoop,

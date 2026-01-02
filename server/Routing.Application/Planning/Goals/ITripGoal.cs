@@ -1,13 +1,12 @@
 ﻿using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.State;
-using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Planning.Goals
 {
     //ukazuje planneru kdy ma skoncit planovani
     //vyhodnocuje konec na zaklade plannerstate a rozhoduje zda je cil dosazen
-    public interface IPlanningGoal<in TIntent>
-    where TIntent : IRoutingIntent
+    public interface ITripGoal<in TIntent>
+    where TIntent : ITripIntent
     {
         /// <summary>
         /// Is goal satisfied? If yes returns true, otherwise false. 

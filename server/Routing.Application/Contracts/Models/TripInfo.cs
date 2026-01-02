@@ -1,6 +1,6 @@
 namespace Routing.Application.Contracts.Models
 {
-    public sealed record RouteInfo
+    public sealed record TripInfo
     (
         Guid Id,
         string Name,

@@ -10,10 +10,10 @@ namespace Routing.Application.Routes.Commands
 {
     internal sealed class RoutesCommands
     {
-        private readonly IRouteRepository _repository;
-        private readonly IRoutePlanner _planner;
+        private readonly ITripRepository _repository;
+        private readonly ITripPlanner _planner;
 
-        public RoutesCommands(IRouteRepository repository, IRoutePlanner planner)
+        public RoutesCommands(ITripRepository repository, ITripPlanner planner)
         {
             _repository = repository;
             _planner = planner;
@@ -40,18 +40,18 @@ namespace Routing.Application.Routes.Commands
             return true;
         }
 
-        public async Task<Result<RouteInfo>> PlanAsyncCommand(PlanRouteRequest request, CancellationToken ct)
+        public async Task<Result<TripInfo>> PlanAsyncCommand(PlanRouteRequest request, CancellationToken ct)
         {
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();
             var goal = new RouteGoal();
-            var config = new PlannerConfig();
+            var settings = new PlannerSettings();
 
             // todo: get actual result
-            await _planner.PlanAsync(intent, goal, profile, config, ct);
+            await _planner.PlanAsync(intent, goal, profile, settings, ct);
 
             // placeholder
-            return new RouteInfo(
+            return new TripInfo(
                 Guid.NewGuid(),
                 "Planned Route",
                 false,
