@@ -1,6 +1,8 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
+using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Planner;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 
@@ -9,14 +11,15 @@ namespace Routing.Application.Routes.Commands
     internal sealed class RoutesCommands
     {
         private readonly IRouteRepository _repository;
-        // todo: private readonly IRoutePlanner _planner;
+        private readonly IRoutePlanner _planner;
 
-        public RoutesCommands(IRouteRepository repository)
+        public RoutesCommands(IRouteRepository repository, IRoutePlanner planner)
         {
             _repository = repository;
+            _planner = planner;
         }
 
-        public async Task<Result<Guid>> SaveAsync(SaveRouteRequest request, CancellationToken ct)
+        public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
         {
             var route = Route.Create(request.Name, isLoop: false);
 
@@ -25,7 +28,7 @@ namespace Routing.Application.Routes.Commands
             return route.Id;
         }
 
-        public async Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct)
+        public async Task<Result<bool>> DeleteAsyncCommand(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
@@ -37,14 +40,15 @@ namespace Routing.Application.Routes.Commands
             return true;
         }
 
-        public async Task<Result<RouteInfo>> PlanAsync(PlanRouteRequest request, CancellationToken ct)
+        public async Task<Result<RouteInfo>> PlanAsyncCommand(PlanRouteRequest request, CancellationToken ct)
         {
-            var start = request.ToStartCoordinate();
-            var end = request.ToEndCoordinate();
-            var preferences = request.ToPreferences();
+            var intent = request.ToRouteIntent();
+            var profile = request.ToUserProfile();
+            var goal = new RouteGoal();
+            var config = new PlannerConfig();
 
-            // todo: call IRoutePlanner
-            // var plannedRoute = await _planner.PlanAsync(start, end, preferences, ct);
+            // todo: get actual result
+            await _planner.PlanAsync(intent, goal, profile, config, ct);
 
             // placeholder
             return new RouteInfo(

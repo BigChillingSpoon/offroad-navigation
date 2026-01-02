@@ -1,6 +1,9 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
+using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Planner;
+using Routing.Application.Routes.Queries;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 
@@ -9,11 +12,12 @@ namespace Routing.Application.Loops.Commands
     internal sealed class LoopsCommands
     {
         private readonly IRouteRepository _repository;
-        // todo: private readonly ILoopFinder _loopFinder;
+        private readonly IRoutePlanner _planner;
 
-        public LoopsCommands(IRouteRepository repository)
+        public LoopsCommands(IRouteRepository repository, IRoutePlanner planner)
         {
             _repository = repository;
+            _planner = planner;
         }
 
         public async Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct)
@@ -39,12 +43,11 @@ namespace Routing.Application.Loops.Commands
 
         public async Task<Result<IReadOnlyList<RouteInfo>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
         {
-            var start = request.ToStartCoordinate();
-            var preferences = request.ToPreferences();
-
-            // todo: volání ILoopFinder
-            // var loops = await _loopFinder.FindAsync(start, preferences, ct);
-
+            var intent = request.ToLoopIntent();
+            var profile = request.ToUserProfile();
+            var goal = new LoopGoal();
+            var config = new PlannerConfig();
+            await _planner.PlanAsync(intent, goal, profile, config, ct);
             // Placeholder - vrátí mock data
             return new List<RouteInfo>
             {
