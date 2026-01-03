@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Offroad.Infrastructure\Routing.Infrastructure.csproj" />
     <ProjectReference Include="..\Routing.Application\Routing.Application.csproj" />
   </ItemGroup>
 
