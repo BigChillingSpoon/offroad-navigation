@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Routing.Infrastructure;
+using Routing.Application;
+using Routing.Domain;
 
 namespace Offroad.Api
 {
@@ -10,39 +10,45 @@ namespace Offroad.Api
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // =========================
-            // Services
-            // =========================
-
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
-
-            // =========================
-            // Build app
-            // =========================
+            RegisterServices(builder);
 
             var app = builder.Build();
 
-            // =========================
-            // HTTP pipeline
-            // =========================
+            ConfigurePipeline(app);
 
+            app.Run();
+        }
+
+        private static void RegisterServices(WebApplicationBuilder builder)
+        {
+            // Framework Services
+            builder.Services.AddControllers();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+            // Project Dependencies
+            builder.Services.AddRoutingApplication();
+            builder.Services.AddRoutingInfrastructure();
+        }
+
+        private static void ConfigurePipeline(WebApplication app)
+        {
+            // Development tools
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
 
+            // Global Middleware
             app.UseHttpsRedirection();
+            app.UseAuthorization();
 
-            // =========================
-            // Endpoints
-            // =========================
+            // Endpoint Mapping
+            app.MapControllers();
 
             app.MapGet("/health", () => Results.Ok("OK"))
                .WithName("Health");
-
-            app.Run();
         }
     }
 }

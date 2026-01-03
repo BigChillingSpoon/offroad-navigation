@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Offroad.Domain\Routing.Domain.csproj" />
+    <ProjectReference Include="..\Routing.Application\Routing.Application.csproj" />
   </ItemGroup>
 
 </Project>
