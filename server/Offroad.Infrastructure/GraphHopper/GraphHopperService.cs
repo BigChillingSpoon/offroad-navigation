@@ -10,9 +10,12 @@ namespace Routing.Infrastructure.GraphHopper
     public class GraphHopperService : IGraphHopperService
     {
         private readonly HttpClient _httpClient;
-        public GraphHopperService(HttpClient httpClient)
+        public GraphHopperService()
         {
-            _httpClient = httpClient;
+            _httpClient = new HttpClient
+            {
+                BaseAddress = new Uri("https://graphhopper.com/api/1")
+            };
         }
 
         public async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)

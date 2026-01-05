@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Routing.Domain.Repositories;
 using Routing.Infrastructure.GraphHopper;
+using Routing.Infrastructure.Repositories;
 
 namespace Routing.Infrastructure
 {
@@ -8,6 +10,7 @@ namespace Routing.Infrastructure
         public static IServiceCollection AddRoutingInfrastructure(this IServiceCollection services)
         {
             services.AddSingleton<IGraphHopperService, GraphHopperService>();
+            services.AddSingleton<ITripRepository, InMemoryTripRepository>();
             return services;
         }
     }
