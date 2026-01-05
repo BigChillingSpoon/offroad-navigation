@@ -1,8 +1,7 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
-using Routing.Application.Planning.Goals;
-using Routing.Application.Planning.Planner;
+using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
@@ -12,12 +11,12 @@ namespace Routing.Application.Routes.Commands
     internal sealed class RoutesCommands : IRoutesCommands
     {
         private readonly ITripRepository _repository;
-        private readonly ITripPlanner _planner;
+        private readonly IRouteFinder _routeFinder;
 
-        public RoutesCommands(ITripRepository repository, ITripPlanner planner)
+        public RoutesCommands(ITripRepository repository, IRouteFinder routeFinder)
         {
             _repository = repository;
-            _planner = planner;
+            _routeFinder = routeFinder;
         }
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
@@ -46,13 +45,10 @@ namespace Routing.Application.Routes.Commands
         {
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();
-            var goal = new RouteGoal();
-            var settings = new PlannerSettings();
 
-            var plan = await _planner.PlanAsync(intent, goal, profile, settings, ct);
-            var route = Trip.Create("Test route", TripType.Route, plan);
-            
-            return RoutingResultMappings.ToTripResult(route);
+            var route = await _routeFinder.FindRouteAsync(intent, profile, ct);
+
+            return route.ToTripResult();
         }
     }
 }

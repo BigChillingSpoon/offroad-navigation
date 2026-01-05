@@ -17,22 +17,21 @@ namespace Routing.Domain
     {
         public static IServiceCollection AddRoutingApplication(this IServiceCollection services)
         {
+            // MODULES
+            services.AddScoped<IRoutesModule, RoutesModule>();
+            services.AddScoped<ILoopsModule, LoopsModule>();
+
             // QUERIES + COMMANDS
             services.AddScoped<ILoopsCommands, LoopsCommands>();
             services.AddScoped<IRoutesCommands, RoutesCommands>();
             services.AddScoped<IRoutesQueries, RoutesQueries>();
             services.AddScoped<ILoopsQueries, LoopsQueries>();
-
-            // MODULES
-            services.AddScoped<IRoutesModule, RoutesModule>();
-            services.AddScoped<ILoopsModule, LoopsModule>();
-
+            
             // PLANNING
             services.AddScoped<ITripPlanner, TripPlanner>();
             services.AddScoped<ITileSelector, TileSelector>();
-            //todo uncomment after creation of Finders
-            //services.AddScoped<ILoopFinder, LoopFinder>();
-            //services.AddScoped<IRouteFinder, RouteFinder>();
+            services.AddScoped<ILoopFinder, LoopFinder>();
+            services.AddScoped<IRouteFinder, RouteFinder>();
             services.AddScoped<ISegmentScorer, SegmentScorer>();
 
             return services;

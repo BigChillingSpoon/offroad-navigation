@@ -1,8 +1,7 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Mappings;
-using Routing.Application.Planning.Goals;
-using Routing.Application.Planning.Planner;
+using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
@@ -12,12 +11,12 @@ namespace Routing.Application.Loops.Commands
     internal sealed class LoopsCommands : ILoopsCommands
     {
         private readonly ITripRepository _repository;
-        private readonly ITripPlanner _planner;
+        private readonly ILoopFinder _loopFinder;
 
-        public LoopsCommands(ITripRepository repository, ITripPlanner planner)
+        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder)
         {
             _repository = repository;
-            _planner = planner;
+            _loopFinder = loopFinder;
         }
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct)
@@ -46,17 +45,13 @@ namespace Routing.Application.Loops.Commands
         {
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
-            var goal = new LoopGoal();
-            var settings = new PlannerSettings();
-            //todo instead of returning from planner we shall return from loopfinder, that returns multiple options
-            var plan = await _planner.PlanAsync(intent, goal, profile, settings, ct);
-            var loop = Trip.Create("Test loop", TripType.Loop, plan);
-            
-            //
-            return new List<TripResult>
-            {
-                RoutingResultMappings.ToTripResult(loop)
-            };
+
+            var loops = await _loopFinder.FindLoopsAsync(intent, profile, ct);
+
+            // Map domain loops to application-level results
+            var tripResults = loops.Select(RoutingResultMappings.ToTripResult).ToList();
+
+            return Result<IReadOnlyList<TripResult>>.Success(tripResults);
         }
     }
 }

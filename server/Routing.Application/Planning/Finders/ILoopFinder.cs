@@ -1,4 +1,8 @@
-﻿using Routing.Domain.Models;
+﻿using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Intents;
+using Routing.Application.Planning.Planner;
+using Routing.Application.Planning.Profiles;
+using Routing.Domain.Models;
 using Routing.Domain.ValueObjects;
 using System;
 using System.Collections.Generic;
@@ -10,7 +14,6 @@ namespace Routing.Application.Planning.Finders
 {
     public interface ILoopFinder
     {
-        // Vrací seznam, protože LoopFinder generuje více variant
-        Task<List<Trip>> FindLoopsAsync(Coordinate start, double distanceKm, CancellationToken ct);
+        Task<List<Trip>> FindLoopsAsync(LoopIntent intent, UserRoutingProfile profile, CancellationToken ct);
     }
 }

@@ -1,12 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Routing.Application.Planning.Intents;
+using Routing.Application.Planning.Profiles;
+using Routing.Domain.Models;
 
 namespace Routing.Application.Planning.Finders
 {
-    internal class IRouteFinder
+    public interface IRouteFinder
     {
+        Task<Trip> FindRouteAsync(RouteIntent intent, UserRoutingProfile profile, CancellationToken ct);
     }
 }
