@@ -4,30 +4,38 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
+using Routing.Application.Abstractions;
+using System.Globalization;
+using Microsoft.Extensions.Options;
 
 namespace Routing.Infrastructure.GraphHopper
 {
-    public class GraphHopperService : IGraphHopperService
+    public sealed class GraphHopperService : IGraphHopperService
     {
         private readonly HttpClient _httpClient;
-        public GraphHopperService()
+        private readonly GraphHopperOptions _options;
+
+        public GraphHopperService(HttpClient httpClient, IOptions<GraphHopperOptions> options)
         {
-            _httpClient = new HttpClient
-            {
-                BaseAddress = new Uri("https://graphhopper.com/api/1")
-            };
+            _httpClient = httpClient;
+            _options = options.Value;
         }
 
         public async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
         {
-            // Minimal request – zatím bez instrukcí, bez geo bodů (rychlé a jednoduché)
             var url =
                 $"/route" +
-                $"?point={fromLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{fromLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
-                $"&point={toLat.ToString(System.Globalization.CultureInfo.InvariantCulture)},{toLon.ToString(System.Globalization.CultureInfo.InvariantCulture)}" +
+                $"?point={fromLat.ToString(CultureInfo.InvariantCulture)},{fromLon.ToString(CultureInfo.InvariantCulture)}" +
+                $"&point={toLat.ToString(CultureInfo.InvariantCulture)},{toLon.ToString(CultureInfo.InvariantCulture)}" +
                 $"&profile={Uri.EscapeDataString(profile)}" +
-                $"&instructions=false" +
-                $"&calc_points=false";
+                $"&instructions={_options.Instructions.ToString().ToLowerInvariant()}" +
+                $"&calc_points={_options.CalcPoints.ToString().ToLowerInvariant()}" +
+                $"&points_encoded={_options.PointsEncoded.ToString().ToLowerInvariant()}";
+
+            if (!string.IsNullOrWhiteSpace(_options.ApiKey))
+            {
+                url += $"&key={Uri.EscapeDataString(_options.ApiKey)}";
+            }
 
             using var response = await _httpClient.GetAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();

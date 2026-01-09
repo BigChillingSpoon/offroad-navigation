@@ -28,7 +28,7 @@ namespace Offroad.Api
 
             // Project Dependencies
             builder.Services.AddRoutingApplication();
-            builder.Services.AddRoutingInfrastructure();
+            builder.Services.AddRoutingInfrastructure(builder.Configuration);
         }
 
         private static void ConfigurePipeline(WebApplication app)

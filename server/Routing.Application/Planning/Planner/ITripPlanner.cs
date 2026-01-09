@@ -7,6 +7,6 @@ namespace Routing.Application.Planning.Planner
 {
     public interface ITripPlanner
     {
-        public Task<TripPlan> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent;
+        public Task<List<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent;
     }
 }

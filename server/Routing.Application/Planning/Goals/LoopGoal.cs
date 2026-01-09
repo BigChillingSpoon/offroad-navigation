@@ -1,4 +1,5 @@
-﻿using Routing.Application.Planning.Intents;
+﻿using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.State;
 using System;
 using System.Collections.Generic;
@@ -10,12 +11,12 @@ namespace Routing.Application.Planning.Goals
 {
     public class LoopGoal : ITripGoal<LoopIntent>
     {
-        public bool IsSatisfied(PlannerState state, LoopIntent intent)
+        public bool IsSatisfied(TripCandidate candidate, LoopIntent intent)
         {
-            return false;
+            return true;
         }
 
-        public double GetGoalScore(PlannerState state, LoopIntent intent)
+        public double GetGoalScore(TripCandidate candidate, LoopIntent intent)
         {
             return 0d;
         }

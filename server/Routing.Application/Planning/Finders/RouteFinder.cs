@@ -20,8 +20,10 @@ namespace Routing.Application.Planning.Finders
             var goal = new RouteGoal();
             var settings = new PlannerSettings();
 
-            var plan = await _planner.PlanAsync(intent, goal, profile, settings, ct);
-            var trip = Trip.Create("Test route", TripType.Route, plan);
+            var plans = await _planner.PlanAsync(intent, goal, profile, settings, ct);
+            var firstPlan = plans.FirstOrDefault();
+
+            var trip = Trip.Create("Test route", TripType.Route, firstPlan ?? TripPlan.Create(69,69,69));
             return trip;
         }
     }

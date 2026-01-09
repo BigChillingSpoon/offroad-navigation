@@ -19,9 +19,9 @@ namespace Routing.Application.Planning.Finders
         {
             var goal = new LoopGoal();
             var settings = new PlannerSettings();
-            var plan = await _planner.PlanAsync(intent, goal, profile, settings, ct);
-            var loop = Trip.Create("Test loop", TripType.Loop, plan);
-            return new List<Trip> { loop };
+            var plans = await _planner.PlanAsync(intent, goal, profile, settings, ct);
+            var loops = plans.Select(p => Trip.Create("Test loop", TripType.Loop, p));
+            return loops.ToList();
         }
     }
 }
