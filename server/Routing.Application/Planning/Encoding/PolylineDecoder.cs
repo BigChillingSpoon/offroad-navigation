@@ -1,6 +1,6 @@
 ﻿using Routing.Domain.ValueObjects;
 
-namespace Routing.Application.Planning.Candidates
+namespace Routing.Application.Planning.Encoding
 {
     public static class PolylineDecoder
     {
@@ -31,7 +31,7 @@ namespace Routing.Application.Planning.Candidates
                 shift += 5;
             } while (b >= 0x20);
 
-            return ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+            return (result & 1) != 0 ? ~(result >> 1) : result >> 1;
         }
     }
 }
