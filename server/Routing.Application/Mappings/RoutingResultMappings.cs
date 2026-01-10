@@ -1,5 +1,7 @@
-﻿using Routing.Application.Contracts.Models;
+﻿using Routing.Application.Contracts.Responses;
+using Routing.Application.Planning.Encoding;
 using Routing.Domain.Models;
+using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Mappings
 {
@@ -11,10 +13,30 @@ namespace Routing.Application.Mappings
                 Id = trip.Id,
                 Name = trip.Name,
                 Type = trip.Type,
-                TotalDistanceMeters = trip.Plan.TotalDistanceInMeters,
-                OffroadDistanceMeters = trip.Plan.OffroadDistanceMeters,
-                Duration = TimeSpan.FromSeconds(trip.Plan.DurationSeconds),
-                ElevationGainMeters = trip.Plan.ElevationGainMeters,
+                Metrics = trip.Plan.ToTripMetrics(),
+                Details = trip.Plan.Segments.ToTripDetails(),
             };
+
+        private static TripMetrics ToTripMetrics(this TripPlan plan)
+            => new()
+            {
+                TotalDistanceMeters = plan.TotalDistanceInMeters,
+                OffroadDistanceMeters = plan.OffroadDistanceMeters,
+                Duration = TimeSpan.FromSeconds(plan.DurationSeconds),
+                ElevationGainMeters = plan.ElevationGainMeters,
+            };
+
+        private static TripDetails ToTripDetails(this IReadOnlyList<Segment> segments)
+        {
+            var allPoints = segments.SelectMany(s => s.Geometry).ToList();
+            var polyline = PolylineEncoder.Encode(allPoints);
+
+            return new TripDetails
+            {
+                Polyline = polyline,
+                Start = allPoints.FirstOrDefault(),//todo throw/handle exceptions
+                End = allPoints.LastOrDefault()
+            };
+        }
     }
 }

@@ -1,12 +1,13 @@
-using Routing.Domain.Enums;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-namespace Routing.Application.Contracts.Models
+namespace Routing.Application.Contracts.Responses
 {
-    public sealed record TripResult
+    public sealed record TripMetrics
     {
-        public required Guid Id { get; init; }
-        public required string Name { get; init; }
-        public TripType Type { get; init; }
         public required double TotalDistanceMeters { get; init; }
         public required double OffroadDistanceMeters { get; init; }
         public required TimeSpan Duration { get; init; }
