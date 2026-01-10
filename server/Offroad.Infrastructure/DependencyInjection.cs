@@ -4,7 +4,7 @@ using Routing.Infrastructure.GraphHopper;
 using Routing.Infrastructure.Repositories;
 using Routing.Application.Abstractions;
 using Microsoft.Extensions.Configuration;
-
+using System.ComponentModel.DataAnnotations;
 namespace Routing.Infrastructure
 {
     public static class DependencyInjection
@@ -12,7 +12,9 @@ namespace Routing.Infrastructure
         public static IServiceCollection AddRoutingInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddOptions<GraphHopperOptions>()
-                .Bind(configuration.GetSection(GraphHopperOptions.SectionName));
+                .Bind(configuration.GetSection(GraphHopperOptions.SectionName))
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
             services.AddHttpClient<IGraphHopperService, GraphHopperService>()
                 .ConfigureHttpClient((sp, client) =>
