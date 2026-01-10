@@ -16,9 +16,9 @@ namespace Routing.Application.Planning.Candidates.Scoring
         {
             return candidates.Select(candidate =>
             {
-                var totalDistance = candidate.PlanChunks.Sum(c => c.DistanceMeters);
-                var offroadDistance = candidate.PlanChunks.Sum(c => c.OffroadDistanceMeters);
-                var elevationGain = candidate.PlanChunks.Sum(c => c.ElevationGainMeters);
+                var totalDistance = candidate.Segments.Sum(c => c.DistanceMeters);
+                var offroadDistance = candidate.Segments.Sum(c => c.OffroadDistanceMeters);
+                var elevationGain = candidate.Segments.Sum(c => c.ElevationGainMeters);
 
                 var offroadRatio = totalDistance <= 0 ? 0 : offroadDistance / totalDistance;
 

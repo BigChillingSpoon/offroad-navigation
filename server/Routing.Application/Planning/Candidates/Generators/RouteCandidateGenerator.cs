@@ -4,12 +4,10 @@ using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 using Routing.Application.Planning.State;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using Routing.Domain.ValueObjects;
 using System.Text.Json;
-using System.Threading.Tasks;
+using Routing.Application.Planning.Exceptions;
+using Routing.Application.Planning.Encoding;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -39,18 +37,20 @@ namespace Routing.Application.Planning.Candidates.Generators
                 return Array.Empty<TripCandidate>();
 
             var geometry = PolylineDecoder.Decode(best.Points);
-            var chunk = new TripPlanChunk
-            {
-                Geometry = geometry,
-                DistanceMeters = best.Distance,
-                DurationSeconds = best.TimeMs / 1000d,
-                OffroadDistanceMeters = 0,     // MVP placeholder - todo calculate actual offroad distance
-                ElevationGainMeters = best.Ascend
-            };
-
+            var segment = Segment.Create(
+                //todo redo exceptions here in exception handling phase
+                geometry.FirstOrDefault() ?? throw new TripPlanningException("Routing engine returned invalid geometry."),
+                geometry.LastOrDefault() ?? throw new TripPlanningException("Routing engine returned invalid geometry. "),
+                best.Distance,
+                best.TimeMs / 1000d,
+                0, // MVP placeholder - todo calculate actual offroad distance
+                best.Ascend,
+                geometry
+                );
+           
             var candidate = new TripCandidate
             {
-                PlanChunks = new[] { chunk },
+                Segments = new[] { segment },
             };
 
             return new[] { candidate };

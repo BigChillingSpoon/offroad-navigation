@@ -7,11 +7,11 @@ namespace Routing.Application.Mappings
     {
         public static TripPlan ToTripPlan(this TripCandidate candidate)
         {
-            var totalDistance = candidate.PlanChunks.Sum(c => c.DistanceMeters);
-            var offroad = candidate.PlanChunks.Sum(c => c.OffroadDistanceMeters);
-            var duration = candidate.PlanChunks.Sum(c => c.DurationSeconds);
+            var totalDistance = candidate.Segments.Sum(c => c.DistanceMeters);
+            var offroad = candidate.Segments.Sum(c => c.OffroadDistanceMeters);
+            var duration = candidate.Segments.Sum(c => c.DurationSeconds);
 
-            return TripPlan.Create(totalDistance, offroad, duration);
+            return TripPlan.Create(totalDistance, offroad, duration, candidate.Segments);
         }
     }
 }
