@@ -1,5 +1,5 @@
 using Offroad.Core;
-using Routing.Application.Contracts.Models;
+using Routing.Application.Contracts.Responses;
 using Routing.Application.Mappings;
 using Routing.Domain.Enums;
 using Routing.Domain.Repositories;

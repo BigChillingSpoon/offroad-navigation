@@ -1,5 +1,6 @@
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
+using Routing.Application.Contracts.Responses;
 using Routing.Application.Mappings;
 using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
@@ -22,7 +23,7 @@ namespace Routing.Application.Routes.Commands
         public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
         {
             var routePlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters, request.Duration.TotalSeconds);
-            var route = Trip.Create(request.Name, TripType.Loop, routePlan);
+            var route = Trip.Create(request.Name, TripType.Route, routePlan);
 
             await _repository.AddAsync(route, ct);
 

@@ -1,8 +1,8 @@
 using Offroad.Core;
-using Routing.Application.Contracts.Models;
 using Routing.Domain.Repositories;
 using Routing.Domain.Enums;
 using Routing.Application.Mappings;
+using Routing.Application.Contracts.Responses;
 namespace Routing.Application.Loops.Queries
 {
     internal sealed class LoopsQueries : ILoopsQueries

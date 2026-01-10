@@ -1,5 +1,5 @@
 ﻿using Offroad.Core;
-using Routing.Application.Contracts.Models;
+using Routing.Application.Contracts.Responses;
 using System;
 using System.Collections.Generic;
 using System.Linq;
