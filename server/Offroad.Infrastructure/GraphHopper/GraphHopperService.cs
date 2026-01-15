@@ -24,14 +24,14 @@ namespace Routing.Infrastructure.GraphHopper
         public async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
         {
             var url =
-                $"/route" +
-                $"?point={fromLat.ToString(CultureInfo.InvariantCulture)},{fromLon.ToString(CultureInfo.InvariantCulture)}" +
-                $"&point={toLat.ToString(CultureInfo.InvariantCulture)},{toLon.ToString(CultureInfo.InvariantCulture)}" +
-                $"&profile={Uri.EscapeDataString(profile)}" +
-                $"&instructions={_options.Instructions.ToString().ToLowerInvariant()}" +
-                $"&calc_points={_options.CalcPoints.ToString().ToLowerInvariant()}" +
-                $"&points_encoded={_options.PointsEncoded.ToString().ToLowerInvariant()}";
-
+                   $"/route" +
+                   $"?point={fromLat.ToString(CultureInfo.InvariantCulture)},{fromLon.ToString(CultureInfo.InvariantCulture)}" +
+                   $"&point={toLat.ToString(CultureInfo.InvariantCulture)},{toLon.ToString(CultureInfo.InvariantCulture)}" +
+                   $"&profile={Uri.EscapeDataString(profile)}" +
+                   $"&instructions={_options.Instructions.ToString().ToLowerInvariant()}" +
+                   $"&calc_points={_options.CalcPoints.ToString().ToLowerInvariant()}" +
+                   $"&points_encoded={_options.PointsEncoded.ToString().ToLowerInvariant()}" +
+                   $"&elevation=true";
             if (!string.IsNullOrWhiteSpace(_options.ApiKey))
             {
                 url += $"&key={Uri.EscapeDataString(_options.ApiKey)}";

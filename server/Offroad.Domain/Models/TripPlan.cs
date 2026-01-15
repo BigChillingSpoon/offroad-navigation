@@ -12,22 +12,23 @@ namespace Routing.Domain.Models
         public double OffroadDistanceMeters { get; private set; }
         public double DurationSeconds { get; private set; }
         public double ElevationGainMeters { get; private set; }
-        public IReadOnlyList<Segment> Segments { get; private set; }
+        public IReadOnlyList<Segment>? Segments { get; private set; }
         //for EFCore
         private TripPlan() { }
 
-        private TripPlan(double distance, double offroadDistance, double duration, IReadOnlyList<Segment> segments)
+        private TripPlan(double distance, double offroadDistance, double duration, double elevationGain, IReadOnlyList<Segment> segments = null)
         {
             TotalDistanceInMeters = distance;
             DurationSeconds = duration;
             OffroadDistanceMeters = offroadDistance;
-            Segments = segments;
+            Segments = segments ?? new List<Segment>();
+            ElevationGainMeters = elevationGain;
         }
 
-        public static TripPlan Create(double totalDistance, double offroadDistance, double duration, IReadOnlyList<Segment> segments )
+        public static TripPlan Create(double totalDistance, double offroadDistance, double duration, double elevationGain, IReadOnlyList<Segment> segments = null)
         {
             //todo add validation
-            return new TripPlan(totalDistance, offroadDistance, duration, segments);
+            return new TripPlan(totalDistance, offroadDistance, duration, elevationGain, segments);
         }
     }
 }

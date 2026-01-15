@@ -1,0 +1,11 @@
+graphhopper:
+  datareader.file: data/czech-republic-latest.osm.pbf
+  graph.location: data/default-gh
+  elevation: true
+  elevation.provider: srtm
+  ghstorage.elevation: true
+
+profiles:
+  - name: car
+    vehicle: car
+    weighting: fastest

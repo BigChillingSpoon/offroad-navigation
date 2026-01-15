@@ -19,6 +19,9 @@ namespace Routing.Application.Planning.Candidates
         [JsonPropertyName("ascend")]
         public double Ascend { get; set; }
 
+        [JsonPropertyName("descend")]
+        public double Descend { get; set; }
+
         [JsonPropertyName("points")]
         public string Points { get; set; } = string.Empty; // polyline
     }

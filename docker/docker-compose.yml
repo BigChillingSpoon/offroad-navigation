@@ -31,11 +31,11 @@ services:
       - "8989:8989"
     volumes:
       - ../routing/graphhopper/data:/data
+      - ../routing/graphhopper/graphhopper-config:/graphhopper-config
+    command: --config /graphhopper-config/config.yml
     environment:
-      JAVA_OPTS: >
-        -Xmx2g
-        -Ddw.graphhopper.location=/data/default-gh
-        -Ddw.graphhopper.datareader.file=/data/czech-republic-latest.osm.pbf
+      JAVA_OPTS: "-Xmx2g"
+
 
 volumes:
   pgdata:

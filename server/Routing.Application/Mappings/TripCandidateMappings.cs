@@ -10,8 +10,9 @@ namespace Routing.Application.Mappings
             var totalDistance = candidate.Segments.Sum(c => c.DistanceMeters);
             var offroad = candidate.Segments.Sum(c => c.OffroadDistanceMeters);
             var duration = candidate.Segments.Sum(c => c.DurationSeconds);
+            var elevationGain = candidate.Segments.Sum(c => c.ElevationGainMeters);
 
-            return TripPlan.Create(totalDistance, offroad, duration, candidate.Segments);
+            return TripPlan.Create(totalDistance, offroad, duration, elevationGain, candidate.Segments);
         }
     }
 }
