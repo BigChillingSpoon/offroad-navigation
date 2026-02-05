@@ -28,4 +28,9 @@ public sealed class Result<T>
 
     public TOut Match<TOut>(Func<T, TOut> ok, Func<Error, TOut> err) =>
         IsSuccess ? ok(_value!) : err(_error!);
+    public Result<TOut> Bind<TOut>(Func<T, Result<TOut>> next) =>
+        IsSuccess ? next(_value!) : Result<TOut>.Failure(_error!);
+    public Result<TOut> Map<TOut>(Func<T, TOut> mapper) =>
+        IsSuccess ? Result<TOut>.Success(mapper(_value!)) : Result<TOut>.Failure(_error!);
+
 }

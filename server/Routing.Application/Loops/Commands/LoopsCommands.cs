@@ -46,13 +46,16 @@ namespace Routing.Application.Loops.Commands
         {
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
-
-            var loops = await _loopFinder.FindLoopsAsync(intent, profile, ct);
-
-            // Map domain loops to application-level results
-            var tripResults = loops.Select(RoutingResultMappings.ToTripResult).ToList();
-
-            return Result<IReadOnlyList<TripResult>>.Success(tripResults);
+            try
+            {
+                var loopsResult = await _loopFinder.FindLoopsAsync(intent, profile, ct);
+                return loopsResult.Bind<IReadOnlyList<TripResult>>(ls => ls.Select(l => l.ToTripResult()).ToList());
+            }
+            catch (Exception ex)
+            {
+                //LOG HERE
+                return PlanningErrorMappings.MapError(ex);
+            }
         }
     }
 }

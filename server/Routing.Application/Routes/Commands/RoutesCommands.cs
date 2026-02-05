@@ -47,9 +47,19 @@ namespace Routing.Application.Routes.Commands
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();
 
-            var route = await _routeFinder.FindRouteAsync(intent, profile, ct);
+            try
+            {
+                var routeResult = await _routeFinder.FindRouteAsync(intent, profile, ct);
+                return routeResult.Bind<TripResult>(r =>
+                     r.ToTripResult()
+                );
 
-            return route.ToTripResult();
+            }
+            catch (Exception ex)
+            {
+                //LOG HERE
+                return PlanningErrorMappings.MapError(ex);
+            }
         }
     }
 }

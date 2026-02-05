@@ -1,4 +1,5 @@
-﻿using Routing.Domain.ValueObjects;
+﻿using Routing.Application.Planning.Exceptions;
+using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Planning.Encoding
 {
@@ -9,16 +10,24 @@ namespace Routing.Application.Planning.Encoding
         {
             var poly = new List<Coordinate>();
             int index = 0, lat = 0, lng = 0;
-
-            while (index < encoded.Length)
+            try
             {
-                lat += DecodeNext(encoded, ref index);
-                lng += DecodeNext(encoded, ref index);
+                while (index < encoded.Length)
+                {
+                    lat += DecodeNext(encoded, ref index);
+                    lng += DecodeNext(encoded, ref index);
 
-                poly.Add(new Coordinate(lat / 1e5, lng / 1e5));
+                    poly.Add(new Coordinate(lat / 1e5, lng / 1e5));
+                }
+
+                return poly;
             }
-
-            return poly;
+            catch(Exception ex)
+            {
+                //todo log
+                throw new InvalidPolylineException("Unable to decode polyline. Polyline was not valid.", ex);
+            }
+           
         }
 
         private static int DecodeNext(string encoded, ref int index)

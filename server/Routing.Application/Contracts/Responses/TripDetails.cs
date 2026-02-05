@@ -1,15 +1,15 @@
 ﻿using Routing.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-public sealed record TripDetails
-{
-    public required string Polyline { get; init; }
-    public required Coordinate Start { get; init; }
-    public required Coordinate End { get; init; }
+public abstract record TripDetails;
+
+public sealed record TripDetailsWithData( 
+    string Polyline,
+    Coordinate Start,
+    Coordinate End
     //todo add bounds + turn instructions
-}
+) : TripDetails;
+
+
+public sealed record EmptyTripDetails
+    : TripDetails;
 

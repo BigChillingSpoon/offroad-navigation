@@ -1,4 +1,5 @@
-﻿using Routing.Application.Planning.Goals;
+﻿using Offroad.Core;
+using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
@@ -14,6 +15,6 @@ namespace Routing.Application.Planning.Finders
 {
     public interface ILoopFinder
     {
-        Task<List<Trip>> FindLoopsAsync(LoopIntent intent, UserRoutingProfile profile, CancellationToken ct);
+        Task<Result<List<Trip>>> FindLoopsAsync(LoopIntent intent, UserRoutingProfile profile, CancellationToken ct);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Routing.Domain.Enums;
 using Offroad.Core.Abstraction;
+using Routing.Domain.Exceptions;
 
 namespace Routing.Domain.Models
 {
@@ -15,6 +16,9 @@ namespace Routing.Domain.Models
 
         public static Trip Create(string name, TripType type, TripPlan plan)
         {
+            if(plan is null)
+                throw new DomainException("Plan cannot be null while creating TripPlan.");
+
             return new Trip
             {
                 Id = Guid.NewGuid(),
@@ -27,7 +31,8 @@ namespace Routing.Domain.Models
 
         public void UpdateName(string newName)
         {
-            // Validace...
+            if (Name == newName)
+                return;//leave without updates
             Name = newName;
             UpdatedOnUtc = DateTime.UtcNow;
         }

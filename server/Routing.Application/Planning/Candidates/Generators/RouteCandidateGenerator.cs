@@ -33,14 +33,14 @@ namespace Routing.Application.Planning.Candidates.Generators
             var response = JsonSerializer.Deserialize<GraphHopperRouteResponse>(json);
 
             var best = response?.Paths?.FirstOrDefault();
-            if (best is null)
+            if (best is null)//may be logged as warning
                 return Array.Empty<TripCandidate>();
 
-            var geometry = PolylineDecoder.Decode(best.Points);
+            var geometry = ProvideGeometryFrom(best.Points);
+           
             var segment = Segment.Create(
-                //todo redo exceptions here in exception handling phase
-                geometry.FirstOrDefault() ?? throw new TripPlanningException("Routing engine returned invalid geometry."),
-                geometry.LastOrDefault() ?? throw new TripPlanningException("Routing engine returned invalid geometry. "),
+                geometry.FirstOrDefault() ?? throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Routing engine returned invalid geometry. Geometry contains no elements."),
+                geometry.LastOrDefault() ?? throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Routing engine returned invalid geometry. Geometry contains no elements. "),
                 best.Distance,
                 best.TimeMs / 1000d,
                 0, // MVP placeholder - todo calculate actual offroad distance
@@ -54,6 +54,18 @@ namespace Routing.Application.Planning.Candidates.Generators
             };
 
             return new[] { candidate };
+        }
+
+        private IReadOnlyList<Coordinate> ProvideGeometryFrom(string encodedPolyline)
+        {
+            try
+            {
+                return PolylineDecoder.Decode(encodedPolyline);
+            }
+            catch (InvalidPolylineException ex)
+            {
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, ex.Message);
+            }
         }
     }
 }
