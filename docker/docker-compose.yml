@@ -1,8 +1,8 @@
 services:
   api:
     build:
-      context: ../server
-      dockerfile: Offroad.Api/Dockerfile
+      context: ..
+      dockerfile: server/Offroad.Api/Dockerfile
     container_name: offroad-api
     ports:
       - "5000:8080"

@@ -2,16 +2,16 @@
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-COPY Offroad.Api/Offroad.Api.csproj Offroad.Api/
-COPY Offroad.Application/Offroad.Application.csproj Offroad.Application/
-COPY Offroad.Domain/Offroad.Domain.csproj Offroad.Domain/
-COPY Offroad.Infrastructure/Offroad.Infrastructure.csproj Offroad.Infrastructure/
-
+COPY server/Offroad.Api/Offroad.Api.csproj Offroad.Api/
+COPY server/Routing.Application/Routing.Application.csproj Routing.Application/
+COPY server/Offroad.Domain/Routing.Domain.csproj Offroad.Domain/
+COPY server/Offroad.Infrastructure/Routing.Infrastructure.csproj Offroad.Infrastructure/
 RUN dotnet restore Offroad.Api/Offroad.Api.csproj
 
-COPY . .
-WORKDIR /src/Offroad.Api
-RUN dotnet publish -c Release -o /app/publish
+COPY server/. .
+
+RUN dotnet publish Offroad.Api/Offroad.Api.csproj -c Release -o /app/publish
+
 
 # ===== RUNTIME STAGE =====
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
