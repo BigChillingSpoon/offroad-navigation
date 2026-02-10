@@ -35,7 +35,7 @@ namespace Routing.Application.Mappings
             {
                 TotalDistanceMeters = plan.TotalDistanceInMeters,
                 OffroadDistanceMeters = plan.OffroadDistanceMeters,
-                Duration = TimeSpan.FromSeconds(plan.DurationSeconds),
+                Duration = plan.Duration,
                 ElevationGainMeters = plan.ElevationGainMeters,
             };
         }

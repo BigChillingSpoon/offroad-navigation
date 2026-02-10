@@ -16,7 +16,7 @@ namespace Routing.Infrastructure
                 .ValidateDataAnnotations()
                 .ValidateOnStart();
 
-            services.AddHttpClient<IGraphHopperService, GraphHopperService>()
+            services.AddHttpClient<IRoutingProvider, GraphHopperService>()
                 .ConfigureHttpClient((sp, client) =>
                 {
                     var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<GraphHopperOptions>>().Value;

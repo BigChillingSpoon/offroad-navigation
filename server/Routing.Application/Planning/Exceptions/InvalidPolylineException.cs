@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Routing.Application.Planning.Exceptions
 {
-    internal class InvalidPolylineException : Exception
+    public class InvalidPolylineException : Exception
     {
         public InvalidPolylineException(string message) : base(message)
         {

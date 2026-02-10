@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using Routing.Application.Planning.Exceptions;
 
-namespace Routing.Infrastructure.GraphHopper
+namespace Routing.Infrastructure.GraphHopper.Mappings
 {
     public static class GraphhopperExceptionMapper
     {
@@ -11,7 +11,7 @@ namespace Routing.Infrastructure.GraphHopper
             {
                 case HttpStatusCode.BadRequest:
                 case HttpStatusCode.UnprocessableEntity:
-                    throw new RoutingProviderException(RoutingProviderErrorCategory.HttpError ,"The routing request was invalid.");
+                    throw new RoutingProviderException(RoutingProviderErrorCategory.HttpError, "The routing request was invalid.");
 
                 case HttpStatusCode.Unauthorized:
                     throw new RoutingProviderException(RoutingProviderErrorCategory.HttpError, "Unauthorized access to the GraphHopper.");

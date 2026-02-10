@@ -9,11 +9,14 @@ using System.Globalization;
 using Microsoft.Extensions.Options;
 using Offroad.Core;
 using Routing.Application.Planning.Exceptions;
+using Routing.Application.Planning.Candidates.Models;
+using System.Text.Json;
+using Routing.Infrastructure.GraphHopper.Mappings;
 
 
 namespace Routing.Infrastructure.GraphHopper
 {
-    public sealed class GraphHopperService : IGraphHopperService
+    public sealed class GraphHopperService : IRoutingProvider
     {
         private readonly HttpClient _httpClient;
         private readonly GraphHopperOptions _options;
@@ -24,14 +27,26 @@ namespace Routing.Infrastructure.GraphHopper
             _options = options.Value;
         }
 
-        public async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
+        public async Task<ProviderRoute?> GetRouteAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
+        {
+            var json = await GetRouteJsonAsync(fromLat, fromLon, toLat, toLon, profile, cancellationToken);
+
+            var response = JsonSerializer.Deserialize<GraphHopperRouteResponse>(json);
+
+            if (response?.Paths is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
+
+            return response.Paths.Select(p => p.ToProviderRoute()).FirstOrDefault();//could be empty 
+        }
+
+        private async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
         {
             var url = BuildUrl(fromLat, fromLon, toLat, toLon, profile);
             //todo create retry logic
             try
             {
                 using var response = await _httpClient.GetAsync(url, cancellationToken);
-
+                var body = await response.Content.ReadAsStringAsync(cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(
@@ -57,7 +72,9 @@ namespace Routing.Infrastructure.GraphHopper
                $"&instructions={_options.Instructions.ToString().ToLowerInvariant()}" +
                $"&calc_points={_options.CalcPoints.ToString().ToLowerInvariant()}" +
                $"&points_encoded={_options.PointsEncoded.ToString().ToLowerInvariant()}" +
-               $"&elevation=true";
+               $"&elevation=true" +
+               "&details=road_class" +
+               "&details=surface";
 
             if (!string.IsNullOrWhiteSpace(_options.ApiKey))
             {

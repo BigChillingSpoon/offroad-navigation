@@ -4,6 +4,7 @@ graphhopper:
   elevation: true
   elevation.provider: srtm
   ghstorage.elevation: true
+  graph.encoded_values: surface,track_type
 
 profiles:
   - name: car
