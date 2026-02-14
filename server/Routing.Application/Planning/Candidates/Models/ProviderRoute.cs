@@ -17,6 +17,11 @@ namespace Routing.Application.Planning.Candidates.Models
 
         public double Descend { get; init; }
 
-        public string Polyline { get; init; } = string.Empty; // polyline
+        public EncodedPolyline Polyline { get; init; } = new();
+    }
+    public sealed record EncodedPolyline
+    {
+        public string Points { get; init; } = string.Empty; // encoded polyline
+        public double PolylineEncodedMultiplier { get; init; }
     }
 }

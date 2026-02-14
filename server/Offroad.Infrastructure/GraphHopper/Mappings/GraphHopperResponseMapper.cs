@@ -1,5 +1,6 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Exceptions;
+using Routing.Infrastructure.GraphHopper.DTOs;
 namespace Routing.Infrastructure.GraphHopper.Mappings
 {
     public static class GraphHopperResponseMapper
@@ -18,10 +19,14 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
             return new ProviderRoute
             {
                 Distance = path.Distance,
-                Duration = TimeSpan.FromMicroseconds(path.TimeMs),
+                Duration = TimeSpan.FromMilliseconds(path.TimeMs),
                 Ascend = path.Ascend,
                 Descend = path.Descend,
-                Polyline = path.Points
+                Polyline = new EncodedPolyline
+                {
+                    Points = path.Points,
+                    PolylineEncodedMultiplier = path.PointsEncodedMultiplier
+                }
             };
         }
     }

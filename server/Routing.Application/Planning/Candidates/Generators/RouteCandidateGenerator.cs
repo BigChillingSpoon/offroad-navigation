@@ -55,11 +55,11 @@ namespace Routing.Application.Planning.Candidates.Generators
         }
 
         //translate technical exception to domain specific one, so we can later on decide how to handle it based on category
-        private IReadOnlyList<Coordinate> GetValidGeometry(string encodedPolyline)
+        private IReadOnlyList<Coordinate> GetValidGeometry(EncodedPolyline polyline)
         {
             try
             {
-                var decoded = PolylineDecoder.Decode(encodedPolyline);
+                var decoded = PolylineDecoder.Decode(polyline.Points, polyline.PolylineEncodedMultiplier);
                 if (decoded.Count < 2)
                     throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Routing engine returned invalid geometry: Decoded polyline contains less than 2 points.");
 

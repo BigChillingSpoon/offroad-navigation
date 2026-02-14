@@ -18,4 +18,8 @@
     <ProjectReference Include="..\Routing.Application\Routing.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="GraphHopper\DTOs\Enums\" />
+  </ItemGroup>
+
 </Project>

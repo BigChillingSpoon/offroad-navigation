@@ -6,7 +6,7 @@ namespace Routing.Application.Planning.Encoding
     public static class PolylineDecoder
     {
         // Standard Google Polyline algorithm, GraphHopper compatible
-        public static IReadOnlyList<Coordinate> Decode(string encoded)
+        public static IReadOnlyList<Coordinate> Decode(string encoded, double multiplier)
         {
             var poly = new List<Coordinate>();
             int index = 0, lat = 0, lng = 0;
@@ -17,7 +17,7 @@ namespace Routing.Application.Planning.Encoding
                     lat += DecodeNext(encoded, ref index);
                     lng += DecodeNext(encoded, ref index);
 
-                    poly.Add(new Coordinate(lat / 1e5, lng / 1e5));
+                    poly.Add(new Coordinate(lat / multiplier, lng / multiplier));
                 }
 
                 return poly;
