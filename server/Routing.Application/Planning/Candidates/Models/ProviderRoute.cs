@@ -23,5 +23,6 @@ namespace Routing.Application.Planning.Candidates.Models
     {
         public string Points { get; init; } = string.Empty; // encoded polyline
         public double PolylineEncodedMultiplier { get; init; }
+        public PolylineDimension Dimension {  get; init; }
     }
 }
