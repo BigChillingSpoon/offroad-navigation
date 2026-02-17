@@ -59,7 +59,8 @@ namespace Routing.Application.Planning.Candidates.Generators
         {
             try
             {
-                var decoded = PolylineDecoder.Decode(polyline.Points, polyline.PolylineEncodedMultiplier);
+
+                var decoded = PolylineDecoder.Decode(polyline.Points, polyline.PolylineEncodedMultiplier, polyline.Dimension);
                 if (decoded.Count < 2)
                     throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Routing engine returned invalid geometry: Decoded polyline contains less than 2 points.");
 
