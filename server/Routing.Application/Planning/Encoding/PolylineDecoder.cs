@@ -1,23 +1,26 @@
 ﻿using Routing.Application.Planning.Exceptions;
+using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
+using System.Diagnostics.Tracing;
 
 namespace Routing.Application.Planning.Encoding
 {
     public static class PolylineDecoder
     {
         // Standard Google Polyline algorithm, GraphHopper compatible
-        public static IReadOnlyList<Coordinate> Decode(string encoded, double multiplier)
+        public static IReadOnlyList<Coordinate> Decode(string encoded, double multiplier, PolylineDimension dimension)
         {
             var poly = new List<Coordinate>();
-            int index = 0, lat = 0, lng = 0;
+            int index = 0, lat = 0, lng = 0, elev = 0;
             try
             {
                 while (index < encoded.Length)
                 {
                     lat += DecodeNext(encoded, ref index);
                     lng += DecodeNext(encoded, ref index);
-
-                    poly.Add(new Coordinate(lat / multiplier, lng / multiplier));
+                    if(dimension == PolylineDimension.ThreeDimensional)
+                        elev += DecodeNext(encoded, ref index);
+                    poly.Add(new Coordinate(lat / multiplier, lng / multiplier, elev / 100.0));
                 }
 
                 return poly;

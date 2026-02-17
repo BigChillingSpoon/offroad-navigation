@@ -25,7 +25,8 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,
-                    PolylineEncodedMultiplier = path.PointsEncodedMultiplier
+                    PolylineEncodedMultiplier = path.PointsEncodedMultiplier,
+                    Dimension = _options.Value.Elevation == true ? PolylineDimension.ThreeDimensional : PolylineDimension.TwoDimensional
                 }
             };
         }

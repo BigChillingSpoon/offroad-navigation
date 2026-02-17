@@ -18,5 +18,6 @@ namespace Routing.Infrastructure.GraphHopper
         public bool Instructions { get; set; } = false;
         public bool CalcPoints { get; set; } = true;
         public bool PointsEncoded { get; set; } = true;
+        public bool Elevation { get; set; } = true;
     }
 }

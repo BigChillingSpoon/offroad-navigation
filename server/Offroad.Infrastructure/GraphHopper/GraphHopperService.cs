@@ -22,12 +22,14 @@ namespace Routing.Infrastructure.GraphHopper
         private readonly HttpClient _httpClient;
         private readonly GraphHopperOptions _graphHopperOptions;
         private readonly JsonSerializerOptions _jsonOptions;
+        private readonly GraphHopperResponseMapper _graphHopperResponseMapper;
 
-        public GraphHopperService(HttpClient httpClient, IOptions<GraphHopperOptions> graphHopperOptions, JsonSerializerOptions jsonOptions)
+        public GraphHopperService(HttpClient httpClient, IOptions<GraphHopperOptions> graphHopperOptions, JsonSerializerOptions jsonOptions, GraphHopperResponseMapper graphHopperResponseMapper)
         {
             _httpClient = httpClient;
             _graphHopperOptions = graphHopperOptions.Value;
             _jsonOptions = jsonOptions;
+            _graphHopperResponseMapper = graphHopperResponseMapper;
         }
 
         public async Task<ProviderRoute?> GetRouteAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
@@ -39,7 +41,7 @@ namespace Routing.Infrastructure.GraphHopper
             if (response?.Paths is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
 
-            return response.Paths.Select(p => p.ToProviderRoute()).FirstOrDefault();//could be empty 
+            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).FirstOrDefault();//could be empty 
         }
 
         private async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
@@ -74,7 +76,7 @@ namespace Routing.Infrastructure.GraphHopper
                $"&instructions={_graphHopperOptions.Instructions.ToString().ToLowerInvariant()}" +
                $"&calc_points={_graphHopperOptions.CalcPoints.ToString().ToLowerInvariant()}" +
                $"&points_encoded={_graphHopperOptions.PointsEncoded.ToString().ToLowerInvariant()}" +
-               $"&elevation=true" +
+               $"&elevation={ _graphHopperOptions.Elevation.ToString().ToLowerInvariant()}" +
                "&details=road_class" +
                "&details=surface";
 

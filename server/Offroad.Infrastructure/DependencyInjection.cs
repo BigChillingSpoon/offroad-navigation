@@ -7,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System.ComponentModel.DataAnnotations;
 using Routing.Infrastructure.GraphHopper.JsonConverters;
 using System.Text.Json;
+using Routing.Infrastructure.GraphHopper.Mappings;
 namespace Routing.Infrastructure
 {
     public static class DependencyInjection
@@ -42,6 +43,10 @@ namespace Routing.Infrastructure
 
                 return options;
             });
+
+            //Mappers
+            services.AddSingleton<GraphHopperResponseMapper>();
+
             return services;
         }
     }
