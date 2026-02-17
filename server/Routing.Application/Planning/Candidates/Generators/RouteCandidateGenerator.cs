@@ -7,6 +7,7 @@ using Routing.Application.Planning.State;
 using Routing.Domain.ValueObjects;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Encoding;
+using Routing.Domain.Enums;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
