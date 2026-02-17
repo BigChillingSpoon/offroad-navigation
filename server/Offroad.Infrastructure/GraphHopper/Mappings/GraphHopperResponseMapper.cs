@@ -1,11 +1,19 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Exceptions;
 using Routing.Infrastructure.GraphHopper.DTOs;
+using Routing.Domain.Enums;
+using Microsoft.Extensions.Options;
 namespace Routing.Infrastructure.GraphHopper.Mappings
 {
-    public static class GraphHopperResponseMapper
+    public sealed class GraphHopperResponseMapper
     {
-        public static ProviderRoute ToProviderRoute(this GraphHopperPath path)
+        private readonly IOptions<GraphHopperOptions> _options;
+        public GraphHopperResponseMapper(IOptions<GraphHopperOptions> options)
+        {
+            _options = options;
+        }
+
+        public ProviderRoute ToProviderRoute(GraphHopperPath path)
         {
             if (path.Distance < 0)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse,"Distance < 0");
