@@ -16,18 +16,15 @@ namespace Routing.Application.Planning.Candidates.Scoring
         {
             return candidates.Select(candidate =>
             {
-                var totalDistance = candidate.Segments.Sum(c => c.DistanceMeters);
-                var offroadDistance = candidate.Segments.Sum(c => c.OffroadDistanceMeters);
-                var elevationGain = candidate.Segments.Sum(c => c.ElevationGainMeters);
-
-                var offroadRatio = totalDistance <= 0 ? 0 : offroadDistance / totalDistance;
+                
+                var offroadRatio = candidate.OffroadDistanceMeters == 0 ? 0 : candidate.OffroadDistanceMeters / candidate.DistanceMeters;
 
                 //preference scoring (placeholder):
                 // - prefer offroad ratio
                 // - penalize extreme elevation gain
                 var score =
                     (offroadRatio * 100.0) -
-                    (elevationGain * 0.01);
+                    (candidate.ElevationGainMeters * 0.01);
 
                 return new ScoredTripCandidate
                 {

@@ -24,12 +24,26 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
             if (string.IsNullOrEmpty(path.Points))
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing geometry");
 
+            if (path.Details is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing details section.");
+
+            if(path.Details.SurfaceIntervals is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing surfaces details.");
+            
+            if (path.Details.RoadClassIntervals is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing road classes details.");
+            
+            var surfaceIntervals = GraphHopperAttributeIntervalMapper.MapSurface(path.Details.SurfaceIntervals);
+            var roadClassIntervals = GraphHopperAttributeIntervalMapper.MapRoadClass(path.Details.RoadClassIntervals);
+
             return new ProviderRoute
             {
                 Distance = path.Distance,
                 Duration = TimeSpan.FromMilliseconds(path.TimeMs),
                 Ascend = path.Ascend,
                 Descend = path.Descend,
+                SurfaceIntervals = surfaceIntervals,
+                RoadClassIntervals = roadClassIntervals,
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,

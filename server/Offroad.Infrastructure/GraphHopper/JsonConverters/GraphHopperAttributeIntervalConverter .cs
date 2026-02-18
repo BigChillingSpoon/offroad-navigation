@@ -9,9 +9,9 @@ using Routing.Infrastructure.GraphHopper.DTOs;
 
 namespace Routing.Infrastructure.GraphHopper.JsonConverters
 {
-    public sealed class GraphHopperDetailSegmentConverter : JsonConverter<GraphHopperDetailSegment>
+    public sealed class GraphHopperDetailSegmentConverter : JsonConverter<GraphHopperAttributeInterval>
     {
-        public override GraphHopperDetailSegment Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override GraphHopperAttributeInterval Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartArray)
                 throw new JsonException("Expected array for detail segment");
@@ -31,7 +31,7 @@ namespace Routing.Infrastructure.GraphHopper.JsonConverters
             if (reader.TokenType != JsonTokenType.EndArray)
                 throw new JsonException("Expected EndArray");
 
-            return new GraphHopperDetailSegment
+            return new GraphHopperAttributeInterval
             (
                 FromIndex: from,
                 ToIndex: to,
@@ -39,7 +39,7 @@ namespace Routing.Infrastructure.GraphHopper.JsonConverters
             );
         }
 
-        public override void Write(Utf8JsonWriter writer, GraphHopperDetailSegment value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, GraphHopperAttributeInterval value, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
             writer.WriteNumberValue(value.FromIndex);

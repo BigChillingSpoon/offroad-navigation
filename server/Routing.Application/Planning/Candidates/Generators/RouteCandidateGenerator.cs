@@ -7,7 +7,8 @@ using Routing.Application.Planning.State;
 using Routing.Domain.ValueObjects;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Encoding;
-using Routing.Domain.Enums;
+using Routing.Application.Planning.Candidates.Builders;
+using Routing.Application.Planning.Extensions;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -36,22 +37,15 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var geometry = GetValidGeometry(route.Polyline);
 
-            var segment = Segment.Create(
-                geometry.First(),
-                geometry.Last(),
-                route.Distance,
-                route.Duration,
-                0, // MVP placeholder - todo calculate actual offroad distance
-                route.Ascend,
-                geometry
-                );
+            var maxEdgeIndex = geometry.Count - 1;
+            var normalizedSurfaces = route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex);
+            var normalizedRoadClasses = route.RoadClassIntervals.EnsureFullCoverage(maxEdgeIndex);
+
+            var segments = SegmentBuilder.Build(geometry, normalizedRoadClasses, normalizedSurfaces);
 
             return new[]
             {
-                new TripCandidate
-                {
-                    Segments = new[] { segment }
-                }
+                TripCandidate.Create(segments, route.Distance, route.Duration, 0, route.Ascend)
             };
         }
 
@@ -60,7 +54,6 @@ namespace Routing.Application.Planning.Candidates.Generators
         {
             try
             {
-
                 var decoded = PolylineDecoder.Decode(polyline.Points, polyline.PolylineEncodedMultiplier, polyline.Dimension);
                 if (decoded.Count < 2)
                     throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Routing engine returned invalid geometry: Decoded polyline contains less than 2 points.");

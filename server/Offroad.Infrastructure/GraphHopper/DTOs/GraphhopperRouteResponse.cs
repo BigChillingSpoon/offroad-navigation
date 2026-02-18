@@ -37,9 +37,9 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
     public sealed class GraphHopperDetails
     {
         [JsonPropertyName("surface")]
-        public List<GraphHopperDetailSegment> Surface { get; set; } = new();
+        public List<GraphHopperAttributeInterval> SurfaceIntervals { get; set; } = new();
 
         [JsonPropertyName("road_class")]
-        public List<GraphHopperDetailSegment> RoadClass { get; set; } = new();
+        public List<GraphHopperAttributeInterval> RoadClassIntervals { get; set; } = new();
     }
 }

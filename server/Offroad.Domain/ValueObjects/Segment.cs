@@ -1,4 +1,5 @@
-﻿using Routing.Domain.Exceptions;
+﻿using Routing.Domain.Enums;
+using Routing.Domain.Exceptions;
 
 namespace Routing.Domain.ValueObjects
 {
@@ -6,41 +7,33 @@ namespace Routing.Domain.ValueObjects
     {
         public Coordinate Start { get; }
         public Coordinate End { get; }
-        public double DistanceMeters { get; }
-        public TimeSpan Duration { get; }
-        public double OffroadDistanceMeters { get; }
-        public double ElevationGainMeters { get; }
-
         public IReadOnlyList<Coordinate> Geometry { get; }
+        public RoadClassType RoadClass { get; }
+        public SurfaceType Surface { get; }
 
-        //to ef core in the future
+        //for ef core in the future
         private Segment() { }
 
-        public Segment(Coordinate start, Coordinate end, double distance, TimeSpan duration, double offroadDistance, double elevationGain, IReadOnlyList<Coordinate> geometry)
+        public Segment(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType)
         {
             Start = start;
             End = end;
-            DistanceMeters = distance;
-            Duration = duration;
-            OffroadDistanceMeters = offroadDistance;
             Geometry = geometry;
-            ElevationGainMeters = elevationGain;
+            RoadClass = roadClassType;
+            Surface = surfaceType;
         }
 
-        public static Segment Create(Coordinate start, Coordinate end, double distance, TimeSpan duration, double offroadDistance, double elevationGain, IReadOnlyList<Coordinate> geometry)
+        public static Segment Create(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType)
         {
-            Validate(start, end, distance, duration, offroadDistance, elevationGain, geometry);
-            return new Segment(start, end, distance, duration, offroadDistance, elevationGain, geometry);
+            Validate(start, end, geometry);
+            return new Segment(start, end, geometry, roadClassType, surfaceType);
         }
-        private static void Validate(Coordinate start, Coordinate end, double distance, TimeSpan duration, double offroadDistance, double elevationGain, IReadOnlyList<Coordinate> geometry)
+        private static void Validate(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry)
         {
             if (start is null) throw new DomainException("Segment start cannot be null");
             if (end is null) throw new DomainException("Segment end cannot be null");
             if (geometry.Count == 0)
                 throw new DomainException("Segment geometry cannot be empty");
-
-            if (offroadDistance < 0) throw new DomainException("Offroad distance cannot be negative");
-            if (elevationGain < 0) throw new DomainException("Elevation gain cannot be negative");
         }
     }
 }
