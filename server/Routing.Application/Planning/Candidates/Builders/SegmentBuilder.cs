@@ -1,4 +1,5 @@
-﻿using Routing.Domain.ValueObjects;
+﻿using Offroad.Core.Exceptions;
+using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Planning.Candidates.Builders
 {
@@ -54,10 +55,14 @@ namespace Routing.Application.Planning.Candidates.Builders
             IReadOnlyList<SurfaceInterval> surfaceIntervals)
         {
             var road = roadClassIntervals
-                .Single(r => r.FromIndex <= fromIndex && fromIndex < r.ToIndex);
+                .SingleOrDefault(r => r.FromIndex <= fromIndex && fromIndex < r.ToIndex)
+                ?? throw new ContractViolationException(
+                    $"RoadClassIntervals must fully cover geometry. No interval found for index {fromIndex}.");
 
             var surface = surfaceIntervals
-                .Single(s => s.FromIndex <= fromIndex && fromIndex < s.ToIndex);
+                .SingleOrDefault(s => s.FromIndex <= fromIndex && fromIndex < s.ToIndex)
+                ?? throw new ContractViolationException(
+                    $"SurfaceIntervals must fully cover geometry. No interval found for index {fromIndex}.");
 
             var intervalGeometry = geometry
                 .Skip(fromIndex)
