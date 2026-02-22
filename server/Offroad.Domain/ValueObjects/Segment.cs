@@ -1,5 +1,6 @@
 ﻿using Routing.Domain.Enums;
 using Routing.Domain.Exceptions;
+using Routing.Domain.Utilities;
 
 namespace Routing.Domain.ValueObjects
 {
@@ -10,6 +11,7 @@ namespace Routing.Domain.ValueObjects
         public IReadOnlyList<Coordinate> Geometry { get; }
         public RoadClassType RoadClass { get; }
         public SurfaceType Surface { get; }
+        public double DistanceMeters { get; }
 
         /// <summary>
         /// Determines if this segment is offroad based on surface and road class.
@@ -53,20 +55,23 @@ namespace Routing.Domain.ValueObjects
         //for ef core in the future
         private Segment() { }
 
-        public Segment(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType)
+        private Segment(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType, double distanceMeters)
         {
             Start = start;
             End = end;
             Geometry = geometry;
             RoadClass = roadClassType;
             Surface = surfaceType;
+            DistanceMeters = distanceMeters;
         }
 
         public static Segment Create(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType)
         {
             Validate(start, end, geometry);
-            return new Segment(start, end, geometry, roadClassType, surfaceType);
+            var distanceMeters = GeoCalculator.CalculatePathDistance(geometry);
+            return new Segment(start, end, geometry, roadClassType, surfaceType, distanceMeters);
         }
+
         private static void Validate(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry)
         {
             if (start is null) throw new DomainException("Segment start cannot be null");

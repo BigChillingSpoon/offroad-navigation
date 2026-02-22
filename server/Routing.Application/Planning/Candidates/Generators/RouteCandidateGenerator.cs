@@ -44,7 +44,7 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             return new[]
             {
-                TripCandidate.Create(segments, route.Distance, route.Duration, 0, route.Ascend, route.Descend)
+                TripCandidate.Create(segments, route.Distance, route.Duration , route.Ascend, route.Descend)
             };
         }
 

@@ -32,8 +32,9 @@ namespace Routing.Application.Planning.Candidates.Models
             ElevationLossMeters = elevationLoss;
         }
 
-        public static TripCandidate Create(IReadOnlyList<Segment> segments, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
+        public static TripCandidate Create(IReadOnlyList<Segment> segments, double totalDistance, TimeSpan duration, double elevationGain, double elevationLoss)
         {
+            var offroadDistance = segments.Where(s => s.IsOffroad).Sum(s => s.DistanceMeters);
             Validate(totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
             return new TripCandidate(segments, totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
         }
