@@ -43,31 +43,9 @@ namespace Routing.Application.Mappings
         private static TripDetails ToTripDetails(this IReadOnlyList<Segment> segments)
         {
             if (segments.Count == 0)
-            {
                 return new EmptyTripDetails();
-            }
 
-            var allPoints = new List<Coordinate>();
-
-            foreach (var segment in segments)
-            {
-                if (segment is null)
-                    throw new InvalidOperationException("Segment cannot be null.");
-
-                if (segment.Geometry is null)
-                    throw new InvalidOperationException(
-                        "Segment geometry is null.");
-
-                if (segment.Geometry.Count == 0)
-                    throw new InvalidOperationException(
-                        "Segment geometry is empty.");
-
-                allPoints.AddRange(segment.Geometry);
-            }
-
-            if (allPoints.Count == 0)
-                throw new InvalidOperationException(
-                    "TripPlan contains segments but no geometry points.");
+            var allPoints = JoinSegmentGeometries(segments);
 
             var hasElevation = allPoints.Any(p => p.Elevation.HasValue);
 
@@ -78,6 +56,46 @@ namespace Routing.Application.Mappings
                 hasElevation);
 
             return new TripDetailsWithData(encodedPolyline, allPoints[0], allPoints[^1]);
+        }
+
+        /// <summary>
+        /// Joins segment geometries into a single list, avoiding duplicate points at segment boundaries.
+        /// Each segment contains its full geometry including start and end points.
+        /// When segments share boundary points (end of segment N = start of segment N+1),
+        /// we skip the first point of subsequent segments to avoid duplicates.
+        /// </summary>
+        private static List<Coordinate> JoinSegmentGeometries(IReadOnlyList<Segment> segments)
+        {
+            var firstSegment = segments.First();
+            ValidateSegment(firstSegment, 0);
+
+            var allPoints = new List<Coordinate>(firstSegment.Geometry);
+
+            for (int i = 1; i < segments.Count; i++)
+            {
+                var segment = segments[i];
+                ValidateSegment(segment, i);
+
+                // Skip first point - it's the same as previous segment's last point
+                allPoints.AddRange(segment.Geometry.Skip(1));
+            }
+#if DEBUG
+            foreach(var seg in allPoints)
+            {
+                //for debug purposes - actually handy for displaying the result - TODO REMOVE
+                Console.WriteLine("["+seg.Longitude +","+ seg.Latitude+"],");
+            }
+#endif
+            return allPoints;
+        }
+
+        private static void ValidateSegment(Segment segment, int index)
+        {
+            if (segment is null)
+                throw new InvalidOperationException($"Segment at index {index} cannot be null.");
+
+            if (segment.Geometry is null || segment.Geometry.Count == 0)
+                throw new InvalidOperationException($"Segment at index {index} has no geometry.");
         }
     }
 }
