@@ -3,7 +3,6 @@ using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
-using Routing.Application.Planning.State;
 using Routing.Domain.ValueObjects;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Encoding;
@@ -20,7 +19,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             _routingProvider = routingProvider;
         }
 
-        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(PlannerState state, RouteIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct)
+        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct)
         {
             var profileName = profile.ToGraphhoperProfile();
 

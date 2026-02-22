@@ -1,6 +1,5 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.State;
 
 namespace Routing.Application.Planning.Goals
 {

@@ -3,7 +3,6 @@ using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Profiles;
-using Routing.Application.Planning.State;
 using Routing.Domain.Models;
 using Routing.Application.Mappings;
 namespace Routing.Application.Planning.Planner
@@ -20,10 +19,8 @@ namespace Routing.Application.Planning.Planner
         }
         public async Task<List<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
-            var state = PlannerState.Initialize(intent.Start);
-
             var generator = _candidateGeneratorFactory.Resolve<TIntent>();
-            var candidates = await generator.GenerateCandidatesAsync(state, intent, profile, settings, ct);
+            var candidates = await generator.GenerateCandidatesAsync(intent, profile, settings, ct);
 
             // 1) HARD FILTER = GOAL
             var validCandidates = candidates
