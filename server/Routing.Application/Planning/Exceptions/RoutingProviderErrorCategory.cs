@@ -10,6 +10,7 @@ namespace Routing.Application.Planning.Exceptions
     {
         Timeout,
         HttpError,
-        InvalidResponse
+        InvalidResponse,
+        Unavailable
     }
 }

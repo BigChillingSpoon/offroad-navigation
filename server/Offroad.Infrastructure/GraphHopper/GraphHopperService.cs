@@ -64,6 +64,10 @@ namespace Routing.Infrastructure.GraphHopper
                 // todo LOG ex
                 throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper request timed out", ex);
             }
+            catch(HttpRequestException ex)
+            {
+                throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "Graphhopper is unable to be reached.", ex);
+            }
         }
 
         private string BuildUrl(double fromLat, double fromLon, double toLat, double toLon, string profile)

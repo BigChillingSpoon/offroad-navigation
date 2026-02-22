@@ -27,7 +27,7 @@ namespace Routing.Application.Mappings
             return ex.ErrorCathegory switch
             {
                 RoutingProviderErrorCategory.Timeout => 
-                    Error.Timeout(ex.Message),
+                    Error.Timeout("Routing provider request timed out."),
 
                 RoutingProviderErrorCategory.HttpError =>
                     Error.ExternalServiceFailure(ex.Message),
@@ -35,6 +35,8 @@ namespace Routing.Application.Mappings
                 RoutingProviderErrorCategory.InvalidResponse =>
                     Error.ExternalServiceFailure(ex.Message),
 
+                RoutingProviderErrorCategory.Unavailable =>
+                    Error.ExternalServiceFailure("Routing provider is unable to be reached."),
                 _ =>
                     Error.ExternalServiceFailure(ex.Message)
             };
