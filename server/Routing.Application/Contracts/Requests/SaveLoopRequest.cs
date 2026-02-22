@@ -13,6 +13,7 @@ namespace Routing.Application.Contracts.Models
         public required double TotalDistanceMeters { get; init; }
         public required double OffroadDistanceMeters { get; init; }
         public required double ElevationGainMeters { get; init; }
+        public required double ElevationLossMeters { get; init; }
         //todo add actual geodata
     }
 }

@@ -22,7 +22,7 @@ namespace Routing.Application.Routes.Commands
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
         {
-            var routePlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds( request.Duration.TotalSeconds), request.ElevationGainMeters);
+            var routePlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds( request.Duration.TotalSeconds), request.ElevationGainMeters, request.ElevationLossMeters);
             var route = Trip.Create(request.Name, TripType.Route, routePlan);
 
             await _repository.AddAsync(route, ct);

@@ -11,6 +11,7 @@ namespace Routing.Application.Contracts.Responses
         public required double TotalDistanceMeters { get; init; }
         public required double OffroadDistanceMeters { get; init; }
         public required TimeSpan Duration { get; init; }
-        public required double ElevationGainMeters { get; init; }
+        public required double ElevationGainMeters {  get; init; }
+        public required double ElevationLossMeters {  get; init; }
     }
 }

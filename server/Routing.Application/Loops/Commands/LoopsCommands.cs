@@ -22,7 +22,7 @@ namespace Routing.Application.Loops.Commands
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct)
         {
-            var loopPlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds(request.Duration.TotalSeconds), request.ElevationGainMeters );
+            var loopPlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds(request.Duration.TotalSeconds), request.ElevationGainMeters, request.ElevationLossMeters);
             var loop = Trip.Create(request.Name, TripType.Loop, loopPlan);
 
             await _repository.AddAsync(loop, ct);

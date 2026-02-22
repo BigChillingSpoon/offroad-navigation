@@ -32,10 +32,11 @@ namespace Routing.Application.Mappings
 
             return new TripMetrics
             {
-                TotalDistanceMeters = plan.TotalDistanceInMeters,
+                TotalDistanceMeters = plan.TotalDistanceMeters,
                 OffroadDistanceMeters = plan.OffroadDistanceMeters,
                 Duration = plan.Duration,
                 ElevationGainMeters = plan.ElevationGainMeters,
+                ElevationLossMeters = plan.ElevationLossMeters
             };
         }
 

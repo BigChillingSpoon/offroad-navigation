@@ -17,7 +17,7 @@ namespace Routing.Application.Planning.Candidates.Scoring
             return candidates.Select(candidate =>
             {
                 
-                var offroadRatio = candidate.OffroadDistanceMeters == 0 ? 0 : candidate.OffroadDistanceMeters / candidate.DistanceMeters;
+                var offroadRatio = candidate.OffroadDistanceMeters == 0 ? 0 : candidate.OffroadDistanceMeters / candidate.TotalDistanceMeters;
 
                 //preference scoring (placeholder):
                 // - prefer offroad ratio
