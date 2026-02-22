@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Modules", "Modules", "{0521
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Core", "Offroad.Core\Offroad.Core.csproj", "{09D39471-2F46-4F86-8A00-38A9B5DC0E07}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Tests", "Offroad.Tests\Offroad.Tests.csproj", "{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +45,10 @@ Global
 		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{09D39471-2F46-4F86-8A00-38A9B5DC0E07}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
