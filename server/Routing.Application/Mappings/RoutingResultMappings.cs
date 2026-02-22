@@ -2,7 +2,6 @@
 using Routing.Application.Planning.Encoding;
 using Routing.Domain.Models;
 using Routing.Domain.ValueObjects;
-using System.Xml.Linq;
 
 namespace Routing.Application.Mappings
 {
@@ -42,7 +41,6 @@ namespace Routing.Application.Mappings
 
         private static TripDetails ToTripDetails(this IReadOnlyList<Segment> segments)
         {
-            //return empty trip details
             if (segments.Count == 0)
             {
                 return new EmptyTripDetails();
@@ -70,19 +68,15 @@ namespace Routing.Application.Mappings
                 throw new InvalidOperationException(
                     "TripPlan contains segments but no geometry points.");
 
-            string polyline;
-            try
-            {
-                polyline = PolylineEncoder.Encode(allPoints);
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException(
-                    "Failed to encode trip geometry to polyline.",
-                    ex);
-            }
+            var hasElevation = allPoints.Any(p => p.Elevation.HasValue);
 
-            return new TripDetailsWithData(polyline, allPoints[0], allPoints[^1]);
+            var encodedPolyline = PolylineEncoder.Encode(
+                allPoints,
+                PolylineSettings.Multiplier,
+                PolylineSettings.ElevationMultiplier,
+                hasElevation);
+
+            return new TripDetailsWithData(encodedPolyline, allPoints[0], allPoints[^1]);
         }
     }
 }

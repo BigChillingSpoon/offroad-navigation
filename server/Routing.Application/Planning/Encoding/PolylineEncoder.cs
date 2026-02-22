@@ -1,35 +1,62 @@
-﻿using Routing.Domain.ValueObjects;
+using Routing.Domain.ValueObjects;
 using System.Text;
 
 namespace Routing.Application.Planning.Encoding
 {
     public static class PolylineEncoder
     {
-        // Google/GraphHopper compatible polyline encoding
-        public static string Encode(IReadOnlyList<Coordinate> points)
+        public static EncodedPolyline Encode(
+            IReadOnlyList<Coordinate> coordinates,
+            double multiplier,
+            double elevationMultiplier,
+            bool hasElevation)
         {
-            if (points == null || points.Count == 0)
+            var points = EncodePoints(coordinates, multiplier, elevationMultiplier, hasElevation);
+
+            return new EncodedPolyline
+            {
+                Points = points,
+                Multiplier = multiplier,
+                ElevationMultiplier = elevationMultiplier,
+                HasElevation = hasElevation
+            };
+        }
+
+        private static string EncodePoints(
+            IReadOnlyList<Coordinate> coordinates,
+            double multiplier,
+            double elevationMultiplier,
+            bool hasElevation)
+        {
+            if (coordinates == null || coordinates.Count == 0)
                 return string.Empty;
 
-            var sb = new StringBuilder();
-            int prevLat = 0, prevLng = 0;
+            var result = new StringBuilder();
+            int prevLat = 0, prevLng = 0, prevElev = 0;
 
-            foreach (var p in points)
+            foreach (var coord in coordinates)
             {
-                int lat = (int)Math.Round(p.Latitude * 1e5);
-                int lng = (int)Math.Round(p.Longitude * 1e5);
+                int lat = (int)Math.Round(coord.Latitude * multiplier);
+                int lng = (int)Math.Round(coord.Longitude * multiplier);
 
-                EncodeValue(lat - prevLat, sb);
-                EncodeValue(lng - prevLng, sb);
+                EncodeValue(lat - prevLat, result);
+                EncodeValue(lng - prevLng, result);
+
+                if (hasElevation)
+                {
+                    int elev = (int)Math.Round((coord.Elevation ?? 0) * elevationMultiplier);
+                    EncodeValue(elev - prevElev, result);
+                    prevElev = elev;
+                }
 
                 prevLat = lat;
                 prevLng = lng;
             }
 
-            return sb.ToString();
+            return result.ToString();
         }
 
-        private static void EncodeValue(int value, StringBuilder sb)
+        private static void EncodeValue(int value, StringBuilder result)
         {
             value <<= 1;
             if (value < 0)
@@ -37,11 +64,11 @@ namespace Routing.Application.Planning.Encoding
 
             while (value >= 0x20)
             {
-                sb.Append((char)((0x20 | value & 0x1f) + 63));
+                result.Append((char)((0x20 | value & 0x1f) + 63));
                 value >>= 5;
             }
 
-            sb.Append((char)(value + 63));
+            result.Append((char)(value + 63));
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Text.Json.Serialization;
 public abstract record TripDetails;
 
 public sealed record TripDetailsWithData( 
-    string Polyline,
+    EncodedPolyline EncodedPolyline,
     Coordinate Start,
     Coordinate End
     //todo add bounds + turn instructions

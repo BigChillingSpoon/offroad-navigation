@@ -1,7 +1,7 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Exceptions;
 using Routing.Infrastructure.GraphHopper.DTOs;
-using Routing.Domain.Enums;
+using Routing.Domain.ValueObjects;
 using Microsoft.Extensions.Options;
 namespace Routing.Infrastructure.GraphHopper.Mappings
 {
@@ -47,8 +47,9 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,
-                    PolylineEncodedMultiplier = path.PointsEncodedMultiplier,
-                    Dimension = _options.Value.Elevation == true ? PolylineDimension.ThreeDimensional : PolylineDimension.TwoDimensional
+                    Multiplier = path.PointsEncodedMultiplier,
+                    ElevationMultiplier = 100.0,//this value is based on graphhopper, and it is independent on PolylineSettings
+                    HasElevation = _options.Value.Elevation
                 }
             };
         }

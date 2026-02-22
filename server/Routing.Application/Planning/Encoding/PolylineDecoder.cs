@@ -1,36 +1,40 @@
 ﻿using Routing.Application.Planning.Exceptions;
-using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
-using System.Diagnostics.Tracing;
 
 namespace Routing.Application.Planning.Encoding
 {
     public static class PolylineDecoder
     {
-        // Standard Google Polyline algorithm, GraphHopper compatible
-        public static IReadOnlyList<Coordinate> Decode(string encoded, double multiplier, PolylineDimension dimension)
+        public static IReadOnlyList<Coordinate> Decode(EncodedPolyline polyline)
         {
+            if (polyline is null)
+                throw new ArgumentNullException(nameof(polyline));
+
             var poly = new List<Coordinate>();
             int index = 0, lat = 0, lng = 0, elev = 0;
             try
             {
-                while (index < encoded.Length)
+                while (index < polyline.Points.Length)
                 {
-                    lat += DecodeNext(encoded, ref index);
-                    lng += DecodeNext(encoded, ref index);
-                    if(dimension == PolylineDimension.ThreeDimensional)
-                        elev += DecodeNext(encoded, ref index);
-                    poly.Add(new Coordinate(lat / multiplier, lng / multiplier, elev / 100.0));
+                    lat += DecodeNext(polyline.Points, ref index);
+                    lng += DecodeNext(polyline.Points, ref index);
+
+                    double? elevation = null;
+                    if (polyline.HasElevation)
+                    {
+                        elev += DecodeNext(polyline.Points, ref index);
+                        elevation = elev / polyline.ElevationMultiplier;
+                    }
+
+                    poly.Add(new Coordinate(lat / polyline.Multiplier, lng / polyline.Multiplier, elevation));
                 }
 
                 return poly;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                //todo log
                 throw new InvalidPolylineException("Unable to decode polyline. Polyline was not valid.", ex);
             }
-           
         }
 
         private static int DecodeNext(string encoded, ref int index)

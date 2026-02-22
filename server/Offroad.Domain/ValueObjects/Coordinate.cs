@@ -1,7 +1,8 @@
 namespace Routing.Domain.ValueObjects
 {
-    public sealed record Coordinate
-    (
-        double Latitude, double Longitude, double Elevation = 0
+    public sealed record Coordinate(
+        double Latitude,
+        double Longitude,
+        double? Elevation = null
     );
 }
