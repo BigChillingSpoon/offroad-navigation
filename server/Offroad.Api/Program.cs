@@ -1,6 +1,8 @@
 using Routing.Infrastructure;
 using Routing.Application;
 using Routing.Domain;
+using Serilog;
+using Serilog.Formatting.Compact;
 
 namespace Offroad.Api
 {
@@ -21,6 +23,12 @@ namespace Offroad.Api
 
         private static void RegisterServices(WebApplicationBuilder builder)
         {
+            // Logging
+            builder.Host.UseSerilog((context, configuration) =>
+            {
+                configuration.ReadFrom.Configuration(context.Configuration);
+            });
+
             // Framework Services
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();

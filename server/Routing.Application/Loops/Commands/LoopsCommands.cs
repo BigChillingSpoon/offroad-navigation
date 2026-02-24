@@ -6,6 +6,7 @@ using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Routing.Application.Loops.Commands
 {
@@ -13,11 +14,13 @@ namespace Routing.Application.Loops.Commands
     {
         private readonly ITripRepository _repository;
         private readonly ILoopFinder _loopFinder;
+        private readonly ILogger<LoopsCommands> _logger;
 
-        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder)
+        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder, ILogger<LoopsCommands> logger)
         {
             _repository = repository;
             _loopFinder = loopFinder;
+            _logger = logger;
         }
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct)
@@ -53,7 +56,7 @@ namespace Routing.Application.Loops.Commands
             }
             catch (Exception ex)
             {
-                //LOG HERE
+                _logger.LogError(ex, "Loop finding failed");
                 return PlanningErrorMappings.MapError(ex);
             }
         }

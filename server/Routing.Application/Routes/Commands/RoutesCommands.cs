@@ -6,6 +6,7 @@ using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace Routing.Application.Routes.Commands
 {
@@ -13,11 +14,13 @@ namespace Routing.Application.Routes.Commands
     {
         private readonly ITripRepository _repository;
         private readonly IRouteFinder _routeFinder;
+        private readonly ILogger<RoutesCommands> _logger;
 
-        public RoutesCommands(ITripRepository repository, IRouteFinder routeFinder)
+        public RoutesCommands(ITripRepository repository, IRouteFinder routeFinder, ILogger<RoutesCommands> logger)
         {
             _repository = repository;
             _routeFinder = routeFinder;
+            _logger = logger;
         }
 
         public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
@@ -57,7 +60,7 @@ namespace Routing.Application.Routes.Commands
             }
             catch (Exception ex)
             {
-                //LOG HERE
+                _logger.LogError(ex, "Route planning failed");
                 return PlanningErrorMappings.MapError(ex);
             }
         }

@@ -14,6 +14,7 @@ namespace Routing.Application.Planning.Candidates.Generators
     public sealed class RouteCandidateGenerator : ICandidateGenerator<RouteIntent>
     {
         private readonly IRoutingProvider _routingProvider;
+
         public RouteCandidateGenerator(IRoutingProvider routingProvider)
         {
             _routingProvider = routingProvider;

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Net.Http;
-using Routing.Application.Abstractions;
+﻿using Routing.Application.Abstractions;
 using System.Globalization;
 using Microsoft.Extensions.Options;
 using Offroad.Core;
@@ -61,7 +55,6 @@ namespace Routing.Infrastructure.GraphHopper
             }
             catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
-                // todo LOG ex
                 throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper request timed out", ex);
             }
             catch(HttpRequestException ex)
