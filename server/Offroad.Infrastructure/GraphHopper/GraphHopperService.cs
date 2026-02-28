@@ -47,19 +47,20 @@ namespace Routing.Infrastructure.GraphHopper
                 using var response = await _httpClient.GetAsync(url, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
+                    var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                     GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(
-                        response.StatusCode);
+                        response.StatusCode, responseBody);
                 }
 
                 return await response.Content.ReadAsStringAsync(cancellationToken);
             }
             catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
-                throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper request timed out", ex);
+                throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper request timed out.", ex);
             }
             catch(HttpRequestException ex)
             {
-                throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "Graphhopper is unable to be reached.", ex);
+                throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "GraphHopper is unreachable.", ex);
             }
         }
 

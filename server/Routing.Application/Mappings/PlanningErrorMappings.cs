@@ -30,15 +30,15 @@ namespace Routing.Application.Mappings
                     Error.Timeout("Routing provider request timed out."),
 
                 RoutingProviderErrorCategory.HttpError =>
-                    Error.ExternalServiceFailure(ex.Message),
+                    Error.ExternalServiceFailure("Routing provider returned an error."),
 
                 RoutingProviderErrorCategory.InvalidResponse =>
-                    Error.ExternalServiceFailure(ex.Message),
+                    Error.ExternalServiceFailure("Routing provider returned an invalid response."),
 
                 RoutingProviderErrorCategory.Unavailable =>
                     Error.ExternalServiceFailure("Routing provider is unable to be reached."),
                 _ =>
-                    Error.ExternalServiceFailure(ex.Message)
+                    Error.ExternalServiceFailure("An unexpected routing error occurred.")
             };
         }
     }
