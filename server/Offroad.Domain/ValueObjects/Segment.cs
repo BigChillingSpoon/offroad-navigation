@@ -26,7 +26,8 @@ namespace Routing.Domain.ValueObjects
                     return true;
 
                 // Track roads are typically offroad unless surface is explicitly paved
-                if (RoadClass == RoadClassType.Track && !IsPavedSurface)
+                // This is not the same as previous condition, in case of unknown surface we can still say that this is an offroad
+                if (RoadClass == RoadClassType.TRACK && !IsPavedSurface)
                     return true;
 
                 return false;
@@ -34,23 +35,22 @@ namespace Routing.Domain.ValueObjects
         }
 
         private bool IsUnpavedSurface => Surface is
-            SurfaceType.Gravel or
-            SurfaceType.FineGravel or
-            SurfaceType.Compacted or
-            SurfaceType.Dirt or
-            SurfaceType.Ground or
-            SurfaceType.Sand or
-            SurfaceType.Mud or
-            SurfaceType.Grass or
-            SurfaceType.Wood or
-            SurfaceType.Ice or
-            SurfaceType.Snow;
+            SurfaceType.UNPAVED or
+            SurfaceType.GRAVEL or
+            SurfaceType.FINE_GRAVEL or
+            SurfaceType.COMPACTED or
+            SurfaceType.DIRT or
+            SurfaceType.GROUND or
+            SurfaceType.SAND or
+            SurfaceType.GRASS or
+            SurfaceType.WOOD;
 
         private bool IsPavedSurface => Surface is
-            SurfaceType.Asphalt or
-            SurfaceType.Concrete or
-            SurfaceType.PavingStones or
-            SurfaceType.Cobblestone;
+            SurfaceType.PAVED or
+            SurfaceType.ASPHALT or
+            SurfaceType.CONCRETE or
+            SurfaceType.PAVING_STONES or
+            SurfaceType.COBBLESTONE;
 
         //for ef core in the future
         private Segment() { }

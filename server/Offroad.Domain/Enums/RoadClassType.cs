@@ -1,19 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Routing.Domain.Enums
+﻿namespace Routing.Domain.Enums
 {
     public enum RoadClassType
     {
-        Motorway,
-        Primary,
-        Secondary,
-        Residential,
-        Track,
-        Tertiary,
-        Unknown
+        OTHER, MOTORWAY, TRUNK, PRIMARY, SECONDARY, TERTIARY, RESIDENTIAL, UNCLASSIFIED,
+        SERVICE, ROAD, TRACK, BRIDLEWAY, STEPS, CYCLEWAY, PATH, LIVING_STREET, FOOTWAY,
+        PEDESTRIAN, PLATFORM, CORRIDOR, CONSTRUCTION, BUSWAY
     }
 }
