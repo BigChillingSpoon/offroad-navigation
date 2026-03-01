@@ -80,6 +80,7 @@ namespace Routing.Application.Mappings
                 allPoints.AddRange(segment.Geometry.Skip(1));
             }
 #if DEBUG
+            Console.WriteLine("New route polyline before encoding:");
             foreach(var seg in allPoints)
             {
                 //for debug purposes - actually handy for displaying the result - TODO REMOVE
