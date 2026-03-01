@@ -13,14 +13,14 @@ public static class RoutingRequestMappings
         {
             Start = new Coordinate(request.StartLatitude, request.StartLongitude),
             End = new Coordinate(request.EndLatitude, request.EndLongitude),
-            Balance = request.RouteBalance
+            Balance = request.RouteBalance,
+            AllowPrivateRoads = request.AllowPrivateRoads,
+            AllowGates = request.AllowGates,
         };
 
     public static UserRoutingProfile ToUserProfile(this PlanRouteRequest request)
         => new()
         {
-            AllowPrivateRoads = request.AllowPrivateRoads,
-            AllowGates = request.AllowGates,
         };
     #endregion ROUTES
     #region LOOPS
@@ -29,14 +29,14 @@ public static class RoutingRequestMappings
         {
             Start = new Coordinate(request.StartLatitude, request.StartLongitude),
             PreferredLengthKm = request.PreferredLengthKm,
-            MaxDriveDistanceKm = request.MaxDriveDistanceKm
+            MaxDriveDistanceKm = request.MaxDriveDistanceKm,
+            AllowPrivateRoads = request.AllowPrivateRoads,
+            AllowGates = request.AllowGates,
         };
 
     public static UserRoutingProfile ToUserProfile(this FindLoopsRequest request)
         => new()
         {
-            AllowPrivateRoads = request.AllowPrivateRoads,
-            AllowGates = request.AllowGates,
         };
     #endregion LOOPS
 }

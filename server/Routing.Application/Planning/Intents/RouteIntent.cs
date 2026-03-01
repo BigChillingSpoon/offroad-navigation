@@ -7,6 +7,8 @@ namespace Routing.Application.Planning.Intents
     {
         public required Coordinate Start { get; init; }
         public required Coordinate End { get; init; }
-        public RouteBalance Balance { get; init; } 
+        public RouteBalance Balance { get; init; }
+        public bool AllowPrivateRoads { get; init; }
+        public bool AllowGates { get; init; }
     }
 }
