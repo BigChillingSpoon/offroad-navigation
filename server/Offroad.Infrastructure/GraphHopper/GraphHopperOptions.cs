@@ -14,6 +14,7 @@ namespace Routing.Infrastructure.GraphHopper
         public bool CalcPoints => true;
         public bool PointsEncoded => true;
         public  bool Elevation => true;
-        public string[] RequestedDetails  => { "road_class", "surface" };
+        public string[] RequestedDetails  => new[]{ "road_class", "surface" };
     }
 }
+
