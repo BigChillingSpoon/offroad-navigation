@@ -1,0 +1,12 @@
+{
+  "priority": [
+    {
+      "if": "surface == PAVED || surface == ASPHALT || surface == CONCRETE || surface == PAVING_STONES || surface == COBBLESTONE",
+      "multiply_by": 0.1
+    },
+    {
+      "else_if": "road_class != TRACK && surface != UNPAVED && surface != GRAVEL && surface != FINE_GRAVEL && surface != COMPACTED && surface != DIRT && surface != GROUND && surface != SAND && surface != GRASS && surface != WOOD",
+      "multiply_by": 0.1
+    }
+  ]
+}

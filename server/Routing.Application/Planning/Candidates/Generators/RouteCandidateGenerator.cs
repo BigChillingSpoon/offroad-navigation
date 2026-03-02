@@ -20,17 +20,9 @@ namespace Routing.Application.Planning.Candidates.Generators
             _routingProvider = routingProvider;
         }
 
-        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct)
+        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, PlannerSettings settings, CancellationToken ct)
         {
-            var profileName = profile.ToGraphhoperProfile();
-
-            var route = await _routingProvider.GetRouteAsync(
-                             intent.Start.Latitude,
-                             intent.Start.Longitude,
-                             intent.End.Latitude,
-                             intent.End.Longitude,
-                             profileName,
-                             ct);
+            var route = await _routingProvider.GetRouteAsync(intent, ct);
 
             if (route is null)//may be logged as warning - we do not handle this as ERROR
                 return Array.Empty<TripCandidate>();

@@ -1,15 +1,24 @@
 graphhopper:
   datareader.file: /data/czech-republic-latest.osm.pbf
   graph.location: /data/default-gh
+  custom_models.directory: /custom_models
 
   profiles:
     - name: car
       custom_model_files: [car.json]
+    - name: offroad_hardcore
+      custom_model_files: [car.json, offroad_hardcore.json]
+    - name: offroad_balanced
+      custom_model_files: [car.json, offroad_balanced.json]
+    - name: offroad_shortest
+      custom_model_files: [car.json, offroad_shortest.json]
+  profiles_ch: []
 
-  profiles_ch:
+  profiles_lm: 
     - profile: car
-
-  profiles_lm: []
+    - profile: offroad_hardcore
+    - profile: offroad_balanced
+    - profile: offroad_shortest
 
   graph.encoded_values: car_access, car_average_speed, road_access, surface, track_type, road_class
 

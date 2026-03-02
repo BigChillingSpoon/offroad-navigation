@@ -1,12 +1,13 @@
 ﻿using Routing.Application.Abstractions;
-using System.Globalization;
 using Microsoft.Extensions.Options;
-using Offroad.Core;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Candidates.Models;
 using System.Text.Json;
 using Routing.Infrastructure.GraphHopper.Mappings;
 using Routing.Infrastructure.GraphHopper.DTOs;
+using Routing.Infrastructure.GraphHopper.Builders;
+using Routing.Application.Planning.Intents;
+using System.Net.Http.Json;
 
 
 namespace Routing.Infrastructure.GraphHopper
@@ -26,61 +27,64 @@ namespace Routing.Infrastructure.GraphHopper
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
 
-        public async Task<ProviderRoute?> GetRouteAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
+        public async Task<ProviderRoute?> GetRouteAsync(RouteIntent intent, CancellationToken cancellationToken)
         {
-            var json = await GetRouteJsonAsync(fromLat, fromLon, toLat, toLon, profile, cancellationToken);
+            var requestPayload = new GraphHopperRouteRequest
+            {
+                Points = new[]
+                {
+                    new[] { intent.Start.Longitude, intent.Start.Latitude },
+                    new[] { intent.End.Longitude, intent.End.Latitude }
+                },
+                Profile = GraphHopperProfileBuilder.ResolveProfileName(intent),
+                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(intent),
+                Elevation = _graphHopperOptions.Elevation,
+                Instructions = _graphHopperOptions.Instructions,
+                CalcPoints = _graphHopperOptions.CalcPoints,
+                PointsEncoded = _graphHopperOptions.PointsEncoded,
+                Details = _graphHopperOptions.RequestedDetails 
+            };
 
-            var response = JsonSerializer.Deserialize<GraphHopperRouteResponse>(json, _jsonOptions);
+            var response = await ExecuteRouteRequestAsync(requestPayload, cancellationToken);
 
             if (response?.Paths is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
-
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).FirstOrDefault();//could be empty 
         }
 
-        private async Task<string> GetRouteJsonAsync(double fromLat, double fromLon, double toLat, double toLon, string profile, CancellationToken cancellationToken)
+        private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, CancellationToken cancellationToken)
         {
-            var url = BuildUrl(fromLat, fromLon, toLat, toLon, profile);
+            var url = BuildUrl();
             //todo create retry logic
             try
             {
-                using var response = await _httpClient.GetAsync(url, cancellationToken);
+                using var response = await _httpClient.PostAsJsonAsync(url, requestPayload, _jsonOptions, cancellationToken);
+
                 if (!response.IsSuccessStatusCode)
                 {
                     var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(
-                        response.StatusCode, responseBody);
+                    GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(response.StatusCode, responseBody);
                 }
 
-                return await response.Content.ReadAsStringAsync(cancellationToken);
+                return await response.Content.ReadFromJsonAsync<GraphHopperRouteResponse>(_jsonOptions, cancellationToken);
             }
             catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
             {
                 throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper request timed out.", ex);
             }
-            catch(HttpRequestException ex)
+            catch (HttpRequestException ex)
             {
                 throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "GraphHopper is unreachable.", ex);
             }
         }
 
-        private string BuildUrl(double fromLat, double fromLon, double toLat, double toLon, string profile)
+        private string BuildUrl()
         {
-            var url =
-               $"/route" +
-               $"?point={fromLat.ToString(CultureInfo.InvariantCulture)},{fromLon.ToString(CultureInfo.InvariantCulture)}" +
-               $"&point={toLat.ToString(CultureInfo.InvariantCulture)},{toLon.ToString(CultureInfo.InvariantCulture)}" +
-               $"&profile={Uri.EscapeDataString(profile)}" +
-               $"&instructions={_graphHopperOptions.Instructions.ToString().ToLowerInvariant()}" +
-               $"&calc_points={_graphHopperOptions.CalcPoints.ToString().ToLowerInvariant()}" +
-               $"&points_encoded={_graphHopperOptions.PointsEncoded.ToString().ToLowerInvariant()}" +
-               $"&elevation={ _graphHopperOptions.Elevation.ToString().ToLowerInvariant()}" +
-               "&details=road_class" +
-               "&details=surface";
+            var url = "/route";
 
             if (!string.IsNullOrWhiteSpace(_graphHopperOptions.ApiKey))
             {
-                url += $"&key={Uri.EscapeDataString(_graphHopperOptions.ApiKey)}";
+                url += $"?key={Uri.EscapeDataString(_graphHopperOptions.ApiKey)}";
             }
 
             return url;

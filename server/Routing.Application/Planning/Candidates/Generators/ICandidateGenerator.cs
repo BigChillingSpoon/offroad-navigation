@@ -7,6 +7,6 @@ namespace Routing.Application.Planning.Candidates.Generators
 {
     public interface ICandidateGenerator<TIntent> where TIntent : ITripIntent
     {
-        Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(TIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct);
+        Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(TIntent intent, PlannerSettings settings, CancellationToken ct);
     }
 }

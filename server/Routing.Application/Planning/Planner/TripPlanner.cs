@@ -20,7 +20,7 @@ namespace Routing.Application.Planning.Planner
         public async Task<List<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
             var generator = _candidateGeneratorFactory.Resolve<TIntent>();
-            var candidates = await generator.GenerateCandidatesAsync(intent, profile, settings, ct);
+            var candidates = await generator.GenerateCandidatesAsync(intent, settings, ct);
 
             // 1) HARD FILTER = GOAL
             var validCandidates = candidates
