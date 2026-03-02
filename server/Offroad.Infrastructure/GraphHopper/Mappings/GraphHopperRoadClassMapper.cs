@@ -1,9 +1,5 @@
 ﻿using Routing.Domain.Enums;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Routing.Infrastructure.GraphHopper.Mappings
 {
@@ -12,19 +8,35 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
         public static RoadClassType Map(string value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return RoadClassType.Unknown;
+                return RoadClassType.UNKNOWN;
 
             var v = value.Trim().ToLowerInvariant();
-            //log unknown values - whether value is not empty but not recognized
-            return value switch
+
+            return v switch
             {
-                "motorway" => RoadClassType.Motorway,
-                "primary" => RoadClassType.Primary,
-                "secondary" => RoadClassType.Secondary,
-                "tertiary" => RoadClassType.Tertiary,
-                "residential" => RoadClassType.Residential,
-                "track" => RoadClassType.Track,
-                _ => RoadClassType.Unknown
+                "motorway" => RoadClassType.MOTORWAY,
+                "trunk" => RoadClassType.TRUNK,
+                "primary" => RoadClassType.PRIMARY,
+                "secondary" => RoadClassType.SECONDARY,
+                "tertiary" => RoadClassType.TERTIARY,
+                "residential" => RoadClassType.RESIDENTIAL,
+                "unclassified" => RoadClassType.UNCLASSIFIED,
+                "service" => RoadClassType.SERVICE,
+                "road" => RoadClassType.ROAD,
+                "track" => RoadClassType.TRACK,
+                "bridleway" => RoadClassType.BRIDLEWAY,
+                "steps" => RoadClassType.STEPS,
+                "cycleway" => RoadClassType.CYCLEWAY,
+                "path" => RoadClassType.PATH,
+                "living_street" => RoadClassType.LIVING_STREET,
+                "footway" => RoadClassType.FOOTWAY,
+                "pedestrian" => RoadClassType.PEDESTRIAN,
+                "platform" => RoadClassType.PLATFORM,
+                "corridor" => RoadClassType.CORRIDOR,
+                "construction" => RoadClassType.CONSTRUCTION,
+                "busway" => RoadClassType.BUSWAY,
+                "other" => RoadClassType.OTHER,
+                _ => RoadClassType.UNKNOWN
             };
         }
     }

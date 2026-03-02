@@ -1,9 +1,5 @@
 ﻿using Routing.Domain.Enums;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Routing.Infrastructure.GraphHopper.Mappings
 {
@@ -12,40 +8,39 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
         public static SurfaceType Map(string? value)
         {
             if (string.IsNullOrWhiteSpace(value))
-                return SurfaceType.Unknown;
+                return SurfaceType.UNKNOWN;
 
             var v = value.Trim().ToLowerInvariant();
 
             return v switch
             {
-                // explicitně "missing" z GH details
-                "missing" => SurfaceType.Missing,
+                // Explicitly missing from routing provider
+                "missing" => SurfaceType.MISSING,
 
-                // paved
-                "asphalt" => SurfaceType.Asphalt,
-                "concrete" => SurfaceType.Concrete,
-                "paving_stones" => SurfaceType.PavingStones,
-                "cobblestone" => SurfaceType.Cobblestone,
+                // Paved 
+                "paved" => SurfaceType.PAVED,
+                "asphalt" => SurfaceType.ASPHALT,
+                "concrete" => SurfaceType.CONCRETE,
+                "paving_stones" => SurfaceType.PAVING_STONES,
+                "cobblestone" => SurfaceType.COBBLESTONE,
 
-                // semi-paved
-                "gravel" => SurfaceType.Gravel,
-                "fine_gravel" => SurfaceType.FineGravel,
-                "compacted" => SurfaceType.Compacted,
+                // Semi-paved / Unpaved 
+                "unpaved" => SurfaceType.UNPAVED,
+                "gravel" => SurfaceType.GRAVEL,
+                "fine_gravel" => SurfaceType.FINE_GRAVEL,
+                "compacted" => SurfaceType.COMPACTED,
 
-                // natural
-                "dirt" => SurfaceType.Dirt,
-                "ground" => SurfaceType.Ground,
-                "sand" => SurfaceType.Sand,
-                "mud" => SurfaceType.Mud,
-                "grass" => SurfaceType.Grass,
+                // Natural
+                "dirt" => SurfaceType.DIRT,
+                "ground" => SurfaceType.GROUND,
+                "sand" => SurfaceType.SAND,
+                "grass" => SurfaceType.GRASS,
 
-                // other
-                "wood" => SurfaceType.Wood,
-                "metal" => SurfaceType.Metal,
-                "ice" => SurfaceType.Ice,
-                "snow" => SurfaceType.Snow,
+                // Other & Special
+                "wood" => SurfaceType.WOOD,
+                "other" => SurfaceType.OTHER,
 
-                _ => SurfaceType.Unknown
+                _ => SurfaceType.UNKNOWN
             };
         }
     }

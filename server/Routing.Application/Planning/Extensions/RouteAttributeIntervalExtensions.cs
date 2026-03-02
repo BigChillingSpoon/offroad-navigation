@@ -13,7 +13,7 @@ namespace Routing.Application.Planning.Extensions
                 {
                     FromIndex = from,
                     ToIndex = to,
-                    Surface = SurfaceType.Unknown
+                    Surface = SurfaceType.UNKNOWN
                 });
         }
 
@@ -25,7 +25,7 @@ namespace Routing.Application.Planning.Extensions
                 {
                     FromIndex = from,
                     ToIndex = to,
-                    RoadClass = RoadClassType.Unknown
+                    RoadClass = RoadClassType.UNKNOWN,
                 });
         }
 
