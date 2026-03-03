@@ -29,6 +29,18 @@ namespace Routing.Application.Planning.Extensions
                 });
         }
 
+        public static IReadOnlyList<TrackTypeInterval> EnsureFullCoverage(this IReadOnlyList<TrackTypeInterval> source, int maxEdgeIndex)
+        {
+            return source.FillMissingIntervals(
+                maxEdgeIndex,
+                (from, to) => new TrackTypeInterval
+                {
+                    FromIndex = from,
+                    ToIndex = to,
+                    TrackType = TrackType.UNKNOWN,
+                });
+        }
+
         private static IReadOnlyList<T> FillMissingIntervals<T>(this IEnumerable<T> source, int maxEdgeIndex, Func<int, int, T> createUnknownSegment)
         where T : RouteAttributeInterval
         {

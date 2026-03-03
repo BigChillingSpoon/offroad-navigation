@@ -28,5 +28,17 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                })
                .ToList();
         }
+
+        public static IReadOnlyList<TrackTypeInterval> MapTrackType(IReadOnlyList<GraphHopperAttributeInterval> source)
+        {
+            return source
+               .Select(s => new TrackTypeInterval
+               {
+                   FromIndex = s.FromIndex,
+                   ToIndex = s.ToIndex,
+                   TrackType = GraphHopperTrackTypeMapper.Map(s.Value)
+               })
+               .ToList();
+        }
     }
 }

@@ -34,6 +34,7 @@ services:
     volumes:
       - ../routing/graphhopper/data:/data
       - ../routing/graphhopper/graphhopper-config:/graphhopper-config
+      - ../routing/graphhopper/custom_models:/custom_models
     command: --config /graphhopper-config/config.yml
     environment:
       JAVA_OPTS: "-Xmx2g"

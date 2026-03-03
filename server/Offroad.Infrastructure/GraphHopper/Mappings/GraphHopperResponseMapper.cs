@@ -32,9 +32,13 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
             
             if (path.Details.RoadClassIntervals is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing road classes details.");
-            
+
+            if (path.Details.TrackTypeIntervals is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing track types details.");
+
             var surfaceIntervals = GraphHopperAttributeIntervalMapper.MapSurface(path.Details.SurfaceIntervals);
             var roadClassIntervals = GraphHopperAttributeIntervalMapper.MapRoadClass(path.Details.RoadClassIntervals);
+            var trackTypeIntervals = GraphHopperAttributeIntervalMapper.MapTrackType(path.Details.TrackTypeIntervals);
 
             return new ProviderRoute
             {
@@ -44,6 +48,7 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 Descend = path.Descend,
                 SurfaceIntervals = surfaceIntervals,
                 RoadClassIntervals = roadClassIntervals,
+                TrackTypeIntervals = trackTypeIntervals,
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,

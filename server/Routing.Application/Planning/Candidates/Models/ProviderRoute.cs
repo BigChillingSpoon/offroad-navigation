@@ -11,6 +11,7 @@ namespace Routing.Application.Planning.Candidates.Models
         public double Descend { get; init; }
         public EncodedPolyline Polyline { get; init; } = new();
         public IReadOnlyList<RoadClassInterval> RoadClassIntervals { get; init; }
-        public IReadOnlyList<SurfaceInterval> SurfaceIntervals { get; init; } 
+        public IReadOnlyList<SurfaceInterval> SurfaceIntervals { get; init; }
+        public IReadOnlyList<TrackTypeInterval> TrackTypeIntervals { get; init; }
     }
 }

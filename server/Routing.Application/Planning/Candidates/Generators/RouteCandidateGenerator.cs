@@ -44,7 +44,8 @@ namespace Routing.Application.Planning.Candidates.Generators
             var segments = SegmentBuilder.Build(
                 geometry,
                 route.RoadClassIntervals.EnsureFullCoverage(maxEdgeIndex),
-                route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex));
+                route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex),
+                route.TrackTypeIntervals.EnsureFullCoverage(maxEdgeIndex));
 
             return TripCandidate.Create(
                 segments,

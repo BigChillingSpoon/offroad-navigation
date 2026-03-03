@@ -31,7 +31,7 @@ graphhopper:
   routing.snap_preventions_default: tunnel, bridge, ferry
   routing.non_ch.max_waypoint_distance: 1000000
 
-  import.osm.ignored_highways: footway,construction,cycleway,steps
+  import.osm.ignored_highways: footway,construction,cycleway,steps,path
   graph.dataaccess.default_type: RAM_STORE
 
 server:

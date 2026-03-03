@@ -1,5 +1,7 @@
 ﻿using Offroad.Core.Exceptions;
 using Routing.Domain.ValueObjects;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Routing.Application.Planning.Candidates.Builders
 {
@@ -8,18 +10,22 @@ namespace Routing.Application.Planning.Candidates.Builders
         public static List<Segment> Build(
             IReadOnlyList<Coordinate> geometry,
             IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals)
+            IReadOnlyList<SurfaceInterval> surfaceIntervals,
+            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
         {
-            var boundaries = CollectBoundaries(roadClassIntervals, surfaceIntervals);
-            return CreateSegments(geometry, boundaries, roadClassIntervals, surfaceIntervals);
+            var boundaries = CollectBoundaries(roadClassIntervals, surfaceIntervals, trackTypeIntervals);
+            return CreateSegments(geometry, boundaries, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
         }
 
-        private static List<int> CollectBoundaries(IReadOnlyList<RoadClassInterval> roadClassIntervals, IReadOnlyList<SurfaceInterval> surfaceIntervals)
+        private static List<int> CollectBoundaries(
+            IReadOnlyList<RoadClassInterval> roadClassIntervals,
+            IReadOnlyList<SurfaceInterval> surfaceIntervals,
+            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
         {
             return roadClassIntervals
                 .SelectMany(s => new[] { s.FromIndex, s.ToIndex })
-                .Concat(
-                    surfaceIntervals.SelectMany(s => new[] { s.FromIndex, s.ToIndex }))
+                .Concat(surfaceIntervals.SelectMany(s => new[] { s.FromIndex, s.ToIndex }))
+                .Concat(trackTypeIntervals.SelectMany(t => new[] { t.FromIndex, t.ToIndex }))
                 .Distinct()
                 .OrderBy(i => i)
                 .ToList();
@@ -29,19 +35,24 @@ namespace Routing.Application.Planning.Candidates.Builders
             IReadOnlyList<Coordinate> geometry,
             List<int> boundaries,
             IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals)
+            IReadOnlyList<SurfaceInterval> surfaceIntervals,
+            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
         {
-            var segments = new List<Segment>();
+            var segments = new List<Segment>(boundaries.Count - 1);
+
             for (int i = 0; i < boundaries.Count - 1; i++)
             {
                 int fromIndex = boundaries[i];
                 int toIndex = boundaries[i + 1];
+
                 var segment = CreateSegment(
                     geometry,
                     fromIndex,
                     toIndex,
                     roadClassIntervals,
-                    surfaceIntervals);
+                    surfaceIntervals,
+                    trackTypeIntervals);
+
                 segments.Add(segment);
             }
             return segments;
@@ -52,7 +63,8 @@ namespace Routing.Application.Planning.Candidates.Builders
             int fromIndex,
             int toIndex,
             IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals)
+            IReadOnlyList<SurfaceInterval> surfaceIntervals,
+            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
         {
             var road = roadClassIntervals
                 .SingleOrDefault(r => r.FromIndex <= fromIndex && fromIndex < r.ToIndex)
@@ -64,17 +76,24 @@ namespace Routing.Application.Planning.Candidates.Builders
                 ?? throw new ContractViolationException(
                     $"SurfaceIntervals must fully cover geometry. No interval found for index {fromIndex}.");
 
-            var intervalGeometry = geometry
-                .Skip(fromIndex)
-                .Take((toIndex - fromIndex) + 1)
-                .ToList();
+            var track = trackTypeIntervals
+                .SingleOrDefault(t => t.FromIndex <= fromIndex && fromIndex < t.ToIndex)
+                ?? throw new ContractViolationException(
+                    $"TrackTypeIntervals must fully cover geometry. No interval found for index {fromIndex}.");
+
+            var intervalGeometry = new List<Coordinate>((toIndex - fromIndex) + 1);
+            for (int i = fromIndex; i <= toIndex; i++)
+            {
+                intervalGeometry.Add(geometry[i]);
+            }
 
             return Segment.Create(
                 start: intervalGeometry[0],
-                end: intervalGeometry[intervalGeometry.Count - 1],
+                end: intervalGeometry[^1],
                 geometry: intervalGeometry,
                 roadClassType: road.RoadClass,
-                surfaceType: surface.Surface
+                surfaceType: surface.Surface,
+                trackType: track.TrackType
             );
         }
     }

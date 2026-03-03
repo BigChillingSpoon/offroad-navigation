@@ -41,5 +41,8 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
 
         [JsonPropertyName("road_class")]
         public List<GraphHopperAttributeInterval> RoadClassIntervals { get; set; } = new();
+
+        [JsonPropertyName("track_type")]
+        public List<GraphHopperAttributeInterval> TrackTypeIntervals { get; set; } = new();
     }
 }
