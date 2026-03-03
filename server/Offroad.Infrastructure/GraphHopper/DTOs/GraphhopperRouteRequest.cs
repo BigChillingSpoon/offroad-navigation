@@ -26,6 +26,25 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
 
         [JsonPropertyName("custom_model")]
         public GraphHopperCustomModel? CustomModel { get; init; }
+
+        [JsonPropertyName("algorithm")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? Algorithm { get; init; }
+        [JsonPropertyName("alternative_route.max_paths")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? AlternativeRouteMaxPaths { get; init; }
+
+        [JsonPropertyName("alternative_route.max_share_factor")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? AlternativeRouteMaxShareFactor { get; init; }
+
+        [JsonPropertyName("alternative_route.max_weight_factor")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public double? AlternativeRouteMaxWeightFactor { get; init; }
+        
+        [JsonPropertyName("ch.disable")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? ChDisable { get; init; }
     }
 
     public sealed record GraphHopperCustomModel

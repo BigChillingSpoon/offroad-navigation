@@ -6,6 +6,6 @@ namespace Routing.Application.Abstractions
 {
     public interface IRoutingProvider
     {
-        Task<ProviderRoute?> GetRouteAsync(RouteIntent intent, CancellationToken cancellationToken);
+        Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken);
     }
 }

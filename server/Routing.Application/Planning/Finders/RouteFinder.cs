@@ -22,7 +22,7 @@ namespace Routing.Application.Planning.Finders
             var settings = new PlannerSettings();
 
             var plans = await _planner.PlanAsync(intent, goal, profile, settings, ct);
-            var firstPlan = plans.FirstOrDefault();
+            var firstPlan = plans.FirstOrDefault(); //for now we only return most suitable route, without any alternatives
 
             //no plan = no trip :)
             if (firstPlan is null)

@@ -27,7 +27,7 @@ namespace Routing.Infrastructure.GraphHopper
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
 
-        public async Task<ProviderRoute?> GetRouteAsync(RouteIntent intent, CancellationToken cancellationToken)
+        public async Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken)
         {
             var requestPayload = new GraphHopperRouteRequest
             {
@@ -42,14 +42,19 @@ namespace Routing.Infrastructure.GraphHopper
                 Instructions = _graphHopperOptions.Instructions,
                 CalcPoints = _graphHopperOptions.CalcPoints,
                 PointsEncoded = _graphHopperOptions.PointsEncoded,
-                Details = _graphHopperOptions.RequestedDetails 
+                Details = _graphHopperOptions.RequestedDetails,
+                Algorithm = _graphHopperOptions.Algorithm,
+                AlternativeRouteMaxPaths = _graphHopperOptions.AlternativeRouteMaxPaths,
+                AlternativeRouteMaxShareFactor = _graphHopperOptions.AlternativeRouteMaxShareFactor,
+                AlternativeRouteMaxWeightFactor = _graphHopperOptions.AlternativeRouteMaxWeightFactor,
+                ChDisable = _graphHopperOptions.ChDisable
             };
 
             var response = await ExecuteRouteRequestAsync(requestPayload, cancellationToken);
 
             if (response?.Paths is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
-            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).FirstOrDefault();//could be empty 
+            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();//could be empty 
         }
 
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, CancellationToken cancellationToken)
