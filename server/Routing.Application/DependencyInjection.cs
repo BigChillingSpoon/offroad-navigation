@@ -37,8 +37,10 @@ namespace Routing.Domain
             services.AddScoped<IRouteFinder, RouteFinder>();
             services.AddScoped<ISegmentScorer, SegmentScorer>();
             services.AddScoped<ITripCandidateGeneratorFactory, TripCandidateGeneratorFactory>();
-            services.AddScoped<ITripCandidateScorer, TripCandidateScorer>();
             services.AddScoped<ICandidateGenerator<RouteIntent>, RouteCandidateGenerator>();
+            services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();
+            services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
+            services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
             //services.AddScoped<ICandidateGenerator<LoopIntent>, Loop>
 
 

@@ -17,6 +17,7 @@ namespace Routing.Application.Planning.Candidates.Models
         public double TotalDistanceMeters { get; }
         public TimeSpan Duration { get; }
         public double OffroadDistanceMeters { get; }
+        public double OffroadRatio => TotalDistanceMeters > 0 ? OffroadDistanceMeters / TotalDistanceMeters : 0;
         public double ElevationGainMeters { get; }
         public double ElevationLossMeters { get; }
         public IReadOnlyList<Segment> Segments { get; init; }

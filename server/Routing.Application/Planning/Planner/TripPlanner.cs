@@ -11,11 +11,11 @@ namespace Routing.Application.Planning.Planner
     {
         private readonly ITripCandidateGeneratorFactory _candidateGeneratorFactory;
 
-        private readonly ITripCandidateScorer _candidateScorer;
-        public TripPlanner(ITripCandidateGeneratorFactory candidateGeneratorFactory, ITripCandidateScorer candidateScorer)
+        private readonly ITripCandidateScorerFactory _candidateScorerFactory;
+        public TripPlanner(ITripCandidateGeneratorFactory candidateGeneratorFactory, ITripCandidateScorerFactory candidateScorerFactory)
         {
             _candidateGeneratorFactory = candidateGeneratorFactory;
-            _candidateScorer = candidateScorer;
+            _candidateScorerFactory = candidateScorerFactory;
         }
         public async Task<List<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
@@ -28,7 +28,8 @@ namespace Routing.Application.Planning.Planner
                 .ToList();
 
             // 2) SCORE (preference ranking)
-            var scored = _candidateScorer.Score(validCandidates, intent, profile, settings);
+            var scorer = _candidateScorerFactory.Resolve<TIntent>();
+            var scored = scorer.Score(validCandidates, intent, profile, settings);
 
             // 3) order by score
             var ordered = scored
