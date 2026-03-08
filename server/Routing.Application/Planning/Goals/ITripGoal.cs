@@ -8,7 +8,11 @@ namespace Routing.Application.Planning.Goals
     public interface ITripGoal<in TIntent> where TIntent : ITripIntent
     {
         /// <summary>
-        /// Is goal satisfied? If yes returns true, otherwise false. 
+        /// This method serves as a "hard filter" to discard corrupted or impossible routes.
+        /// <returns>
+        /// True if the candidate is technically valid (contains segments with geometry 
+        /// and maintains referential continuity between them); otherwise, false.
+        /// </returns>
         /// </summary>
         bool IsSatisfied(TripCandidate candidate, TIntent intent);
 
