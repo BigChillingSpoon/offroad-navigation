@@ -16,20 +16,25 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(5);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 4, RoadClass = RoadClassType.Primary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 4, RoadClass = RoadClassType.PRIMARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 4, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RoadClassType.Primary, result[0].RoadClass);
-        Assert.Equal(SurfaceType.Asphalt, result[0].Surface);
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
+        Assert.Equal(TrackType.GRADE1, result[0].TrackType);
     }
 
     [Fact]
@@ -39,25 +44,29 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.Primary },
-            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.Secondary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.PRIMARY },
+            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.SECONDARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         Assert.Equal(2, result.Count);
 
-        Assert.Equal(RoadClassType.Primary, result[0].RoadClass);
-        Assert.Equal(SurfaceType.Asphalt, result[0].Surface);
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
 
-        Assert.Equal(RoadClassType.Secondary, result[1].RoadClass);
-        Assert.Equal(SurfaceType.Asphalt, result[1].Surface);
+        Assert.Equal(RoadClassType.SECONDARY, result[1].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[1].Surface);
     }
 
     [Fact]
@@ -67,25 +76,61 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.Primary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.PRIMARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 5, Surface = SurfaceType.Asphalt },
-            new SurfaceInterval { FromIndex = 5, ToIndex = 9, Surface = SurfaceType.Gravel }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 5, Surface = SurfaceType.ASPHALT },
+            new SurfaceInterval { FromIndex = 5, ToIndex = 9, Surface = SurfaceType.GRAVEL }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         Assert.Equal(2, result.Count);
 
-        Assert.Equal(SurfaceType.Asphalt, result[0].Surface);
-        Assert.Equal(RoadClassType.Primary, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
 
-        Assert.Equal(SurfaceType.Gravel, result[1].Surface);
-        Assert.Equal(RoadClassType.Primary, result[1].RoadClass);
+        Assert.Equal(SurfaceType.GRAVEL, result[1].Surface);
+        Assert.Equal(RoadClassType.PRIMARY, result[1].RoadClass);
+    }
+
+    [Fact]
+    public void Build_TrackTypeChangesMidway_CreatesTwoSegments()
+    {
+        // Arrange
+        var geometry = CreateGeometry(10);
+        var roadClassIntervals = new[]
+        {
+            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.TRACK }
+        };
+        var surfaceIntervals = new[]
+        {
+            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.GRAVEL }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 5, TrackType = TrackType.GRADE2 },
+            new TrackTypeInterval { FromIndex = 5, ToIndex = 9, TrackType = TrackType.GRADE4 }
+        };
+
+        // Act
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
+
+        // Assert
+        Assert.Equal(2, result.Count);
+
+        Assert.Equal(TrackType.GRADE2, result[0].TrackType);
+        Assert.Equal(SurfaceType.GRAVEL, result[0].Surface);
+
+        Assert.Equal(TrackType.GRADE4, result[1].TrackType);
+        Assert.Equal(SurfaceType.GRAVEL, result[1].Surface);
     }
 
     [Fact]
@@ -95,33 +140,86 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.Primary },
-            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.Secondary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.PRIMARY },
+            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.SECONDARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 3, Surface = SurfaceType.Asphalt },
-            new SurfaceInterval { FromIndex = 3, ToIndex = 9, Surface = SurfaceType.Gravel }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 3, Surface = SurfaceType.ASPHALT },
+            new SurfaceInterval { FromIndex = 3, ToIndex = 9, Surface = SurfaceType.GRAVEL }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         // Boundaries: 0, 3, 5, 9 => 3 segments
         Assert.Equal(3, result.Count);
 
-        // [0-3]: Primary, Asphalt
-        Assert.Equal(RoadClassType.Primary, result[0].RoadClass);
-        Assert.Equal(SurfaceType.Asphalt, result[0].Surface);
+        // [0-3]: PRIMARY, ASPHALT
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
 
-        // [3-5]: Primary, Gravel
-        Assert.Equal(RoadClassType.Primary, result[1].RoadClass);
-        Assert.Equal(SurfaceType.Gravel, result[1].Surface);
+        // [3-5]: PRIMARY, GRAVEL
+        Assert.Equal(RoadClassType.PRIMARY, result[1].RoadClass);
+        Assert.Equal(SurfaceType.GRAVEL, result[1].Surface);
 
-        // [5-9]: Secondary, Gravel
-        Assert.Equal(RoadClassType.Secondary, result[2].RoadClass);
-        Assert.Equal(SurfaceType.Gravel, result[2].Surface);
+        // [5-9]: SECONDARY, GRAVEL
+        Assert.Equal(RoadClassType.SECONDARY, result[2].RoadClass);
+        Assert.Equal(SurfaceType.GRAVEL, result[2].Surface);
+    }
+
+    [Fact]
+    public void Build_AllThreeTypesChangeAtDifferentPoints_CreatesCorrectSegments()
+    {
+        // Arrange
+        var geometry = CreateGeometry(12);
+        var roadClassIntervals = new[]
+        {
+            new RoadClassInterval { FromIndex = 0, ToIndex = 6, RoadClass = RoadClassType.PRIMARY },
+            new RoadClassInterval { FromIndex = 6, ToIndex = 11, RoadClass = RoadClassType.TRACK }
+        };
+        var surfaceIntervals = new[]
+        {
+            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.ASPHALT },
+            new SurfaceInterval { FromIndex = 4, ToIndex = 11, Surface = SurfaceType.DIRT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 8, TrackType = TrackType.GRADE1 },
+            new TrackTypeInterval { FromIndex = 8, ToIndex = 11, TrackType = TrackType.GRADE4 }
+        };
+
+        // Act
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
+
+        // Assert
+        // Boundaries: 0, 4, 6, 8, 11 => 4 segments
+        Assert.Equal(4, result.Count);
+
+        // [0-4]: PRIMARY, ASPHALT, GRADE1
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
+        Assert.Equal(TrackType.GRADE1, result[0].TrackType);
+
+        // [4-6]: PRIMARY, DIRT, GRADE1
+        Assert.Equal(RoadClassType.PRIMARY, result[1].RoadClass);
+        Assert.Equal(SurfaceType.DIRT, result[1].Surface);
+        Assert.Equal(TrackType.GRADE1, result[1].TrackType);
+
+        // [6-8]: TRACK, DIRT, GRADE1
+        Assert.Equal(RoadClassType.TRACK, result[2].RoadClass);
+        Assert.Equal(SurfaceType.DIRT, result[2].Surface);
+        Assert.Equal(TrackType.GRADE1, result[2].TrackType);
+
+        // [8-11]: TRACK, DIRT, GRADE4
+        Assert.Equal(RoadClassType.TRACK, result[3].RoadClass);
+        Assert.Equal(SurfaceType.DIRT, result[3].Surface);
+        Assert.Equal(TrackType.GRADE4, result[3].TrackType);
     }
 
     [Fact]
@@ -131,27 +229,34 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.Primary },
-            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.Track }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 5, RoadClass = RoadClassType.PRIMARY },
+            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.TRACK }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 5, Surface = SurfaceType.Asphalt },
-            new SurfaceInterval { FromIndex = 5, ToIndex = 9, Surface = SurfaceType.Dirt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 5, Surface = SurfaceType.ASPHALT },
+            new SurfaceInterval { FromIndex = 5, ToIndex = 9, Surface = SurfaceType.DIRT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 5, TrackType = TrackType.GRADE1 },
+            new TrackTypeInterval { FromIndex = 5, ToIndex = 9, TrackType = TrackType.GRADE5 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         // Boundaries: 0, 5, 9 => 2 segments (5 is deduplicated)
         Assert.Equal(2, result.Count);
 
-        Assert.Equal(RoadClassType.Primary, result[0].RoadClass);
-        Assert.Equal(SurfaceType.Asphalt, result[0].Surface);
+        Assert.Equal(RoadClassType.PRIMARY, result[0].RoadClass);
+        Assert.Equal(SurfaceType.ASPHALT, result[0].Surface);
+        Assert.Equal(TrackType.GRADE1, result[0].TrackType);
 
-        Assert.Equal(RoadClassType.Track, result[1].RoadClass);
-        Assert.Equal(SurfaceType.Dirt, result[1].Surface);
+        Assert.Equal(RoadClassType.TRACK, result[1].RoadClass);
+        Assert.Equal(SurfaceType.DIRT, result[1].Surface);
+        Assert.Equal(TrackType.GRADE5, result[1].TrackType);
     }
 
     #endregion
@@ -165,16 +270,20 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(5);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 2, RoadClass = RoadClassType.Primary },
-            new RoadClassInterval { FromIndex = 2, ToIndex = 4, RoadClass = RoadClassType.Secondary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 2, RoadClass = RoadClassType.PRIMARY },
+            new RoadClassInterval { FromIndex = 2, ToIndex = 4, RoadClass = RoadClassType.SECONDARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 4, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         Assert.Equal(2, result.Count);
@@ -197,15 +306,19 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.Primary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.PRIMARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act
-        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals);
+        var result = SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
 
         // Assert
         var segment = Assert.Single(result);
@@ -225,12 +338,16 @@ public class SegmentBuilderTests
         var roadClassIntervals = Array.Empty<RoadClassInterval>();
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 4, TrackType = TrackType.GRADE1 }
         };
 
         // Act & Assert
         Assert.Throws<ContractViolationException>(() =>
-            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals));
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
     }
 
     [Fact]
@@ -240,13 +357,37 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(5);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 4, RoadClass = RoadClassType.Primary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 4, RoadClass = RoadClassType.PRIMARY }
         };
         var surfaceIntervals = Array.Empty<SurfaceInterval>();
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 4, TrackType = TrackType.GRADE1 }
+        };
 
         // Act & Assert
         Assert.Throws<ContractViolationException>(() =>
-            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals));
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
+    }
+
+    [Fact]
+    public void Build_EmptyTrackTypeIntervals_ThrowsContractViolationException()
+    {
+        // Arrange
+        var geometry = CreateGeometry(5);
+        var roadClassIntervals = new[]
+        {
+            new RoadClassInterval { FromIndex = 0, ToIndex = 4, RoadClass = RoadClassType.PRIMARY }
+        };
+        var surfaceIntervals = new[]
+        {
+            new SurfaceInterval { FromIndex = 0, ToIndex = 4, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = Array.Empty<TrackTypeInterval>();
+
+        // Act & Assert
+        Assert.Throws<ContractViolationException>(() =>
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
     }
 
     [Fact]
@@ -256,18 +397,22 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 3, RoadClass = RoadClassType.Primary },
+            new RoadClassInterval { FromIndex = 0, ToIndex = 3, RoadClass = RoadClassType.PRIMARY },
             // Gap between 3 and 5
-            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.Secondary }
+            new RoadClassInterval { FromIndex = 5, ToIndex = 9, RoadClass = RoadClassType.SECONDARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.Asphalt }
+            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act & Assert
         var exception = Assert.Throws<ContractViolationException>(() =>
-            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals));
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
 
         Assert.Contains("RoadClassIntervals", exception.Message);
         Assert.Contains("index 3", exception.Message);
@@ -280,20 +425,52 @@ public class SegmentBuilderTests
         var geometry = CreateGeometry(10);
         var roadClassIntervals = new[]
         {
-            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.Primary }
+            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.PRIMARY }
         };
         var surfaceIntervals = new[]
         {
-            new SurfaceInterval { FromIndex = 0, ToIndex = 3, Surface = SurfaceType.Asphalt },
+            new SurfaceInterval { FromIndex = 0, ToIndex = 3, Surface = SurfaceType.ASPHALT },
             // Gap between 3 and 6
-            new SurfaceInterval { FromIndex = 6, ToIndex = 9, Surface = SurfaceType.Gravel }
+            new SurfaceInterval { FromIndex = 6, ToIndex = 9, Surface = SurfaceType.GRAVEL }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 9, TrackType = TrackType.GRADE1 }
         };
 
         // Act & Assert
         var exception = Assert.Throws<ContractViolationException>(() =>
-            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals));
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
 
         Assert.Contains("SurfaceIntervals", exception.Message);
+        Assert.Contains("index 3", exception.Message);
+    }
+
+    [Fact]
+    public void Build_GapInTrackTypeCoverage_ThrowsContractViolationException()
+    {
+        // Arrange
+        var geometry = CreateGeometry(10);
+        var roadClassIntervals = new[]
+        {
+            new RoadClassInterval { FromIndex = 0, ToIndex = 9, RoadClass = RoadClassType.PRIMARY }
+        };
+        var surfaceIntervals = new[]
+        {
+            new SurfaceInterval { FromIndex = 0, ToIndex = 9, Surface = SurfaceType.ASPHALT }
+        };
+        var trackTypeIntervals = new[]
+        {
+            new TrackTypeInterval { FromIndex = 0, ToIndex = 3, TrackType = TrackType.GRADE1 },
+            // Gap between 3 and 6
+            new TrackTypeInterval { FromIndex = 6, ToIndex = 9, TrackType = TrackType.GRADE4 }
+        };
+
+        // Act & Assert
+        var exception = Assert.Throws<ContractViolationException>(() =>
+            SegmentBuilder.Build(geometry, roadClassIntervals, surfaceIntervals, trackTypeIntervals));
+
+        Assert.Contains("TrackTypeIntervals", exception.Message);
         Assert.Contains("index 3", exception.Message);
     }
 
