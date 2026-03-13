@@ -2,6 +2,7 @@ graphhopper:
   datareader.file: /data/czech-republic-latest.osm.pbf
   graph.location: /data/default-gh
   custom_models.directory: /custom_models
+  custom_areas.directory: /data/restricted_areas
 
   profiles:
     - name: car
@@ -21,6 +22,12 @@ graphhopper:
     - profile: offroad_shortest
 
   graph.encoded_values: car_access, car_average_speed, road_access, surface, track_type, road_class
+  custom_models.enabled: true
+  track_custom_encoded_values: [barrier]
+
+  vehicles:
+    car:
+      block_barriers: false
 
   graph.elevation.provider: srtm
   graph.elevation.cache_dir: /data/srtm
