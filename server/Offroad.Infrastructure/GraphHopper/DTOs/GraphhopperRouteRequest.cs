@@ -51,6 +51,15 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
     {
         [JsonPropertyName("priority")]
         public List<PriorityStatement> Priority { get; init; } = new();
+
+        [JsonPropertyName("access")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public List<AccessStatement> Access { get; init; } = new();
+
+        [JsonPropertyName("speed")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public List<SpeedStatement> Speed { get; init; } = new();
+
     }
 
     public sealed record PriorityStatement
@@ -60,5 +69,21 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
 
         [JsonPropertyName("multiply_by")]
         public required double MultiplyBy { get; init; }
+    }
+    public sealed record AccessStatement
+    {
+        [JsonPropertyName("if")]
+        public required string IfCondition { get; init; }
+
+        [JsonPropertyName("base_value")]
+        public required bool BaseValue { get; init; }
+    }
+    public sealed record SpeedStatement
+    {
+        [JsonPropertyName("if")]
+        public required string IfCondition { get; init; }
+
+        [JsonPropertyName("limit_to")]
+        public required string LimitTo { get; init; }
     }
 }
