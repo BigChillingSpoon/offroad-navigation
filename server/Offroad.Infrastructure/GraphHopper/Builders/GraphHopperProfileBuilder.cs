@@ -30,18 +30,22 @@ namespace Routing.Infrastructure.GraphHopper.Builders
             {
                 customModel.Priority.Add(new PriorityStatement
                 {
-                    IfCondition = "road_access == PRIVATE || road_access == NO || road_access == FORESTRY || road_access == AGRICULTURAL",
+                    IfCondition = "road_access == PRIVATE || road_access == FORESTRY || road_access == AGRICULTURAL || road_access == CUSTOMERS",
                     MultiplyBy = 0.0
-                });
-                customModel.Access.Add(new AccessStatement
-                {
-                    IfCondition = "road_access == PRIVATE || road_access == NO || road_access == FORESTRY || road_access == AGRICULTURAL",
-                    BaseValue = false
                 });
                 customModel.Priority.Add(new PriorityStatement
                 {
                     IfCondition = "in_cz_parks == true && road_class == TRACK",
                     MultiplyBy = 0.0 
+                });
+            }
+
+            if (!intent.AllowGates)
+            {
+                customModel.Priority.Add(new PriorityStatement
+                {
+                    IfCondition = "is_gumbalkan_barrier == true",
+                    MultiplyBy = 0.0
                 });
             }
 

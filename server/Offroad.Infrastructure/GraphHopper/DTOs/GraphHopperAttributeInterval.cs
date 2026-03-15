@@ -10,10 +10,10 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
     /// Interval is [FromIndex, ToIndex) - ToIndex is exclusive.
     /// </summary>
 
-    public record GraphHopperAttributeInterval
+    public record GraphHopperAttributeInterval<T>
     (
         int FromIndex,
         int ToIndex,
-        string Value
+        T Value
     );
 }

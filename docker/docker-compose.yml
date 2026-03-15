@@ -27,7 +27,9 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   graphhopper:
-    image: israelhikingmap/graphhopper
+    build:
+      context: ../routing/graphhopper/engine
+      dockerfile: Dockerfile
     container_name: offroad-graphhopper
     ports:
       - "8989:8989"
@@ -35,7 +37,6 @@ services:
       - ../routing/graphhopper/data:/data
       - ../routing/graphhopper/graphhopper-config:/graphhopper-config
       - ../routing/graphhopper/custom_models:/custom_models
-    command: --config /graphhopper-config/config.yml
     environment:
       JAVA_OPTS: "-Xmx2g"
 

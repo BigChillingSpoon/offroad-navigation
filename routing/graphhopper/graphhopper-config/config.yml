@@ -21,7 +21,7 @@ graphhopper:
     - profile: offroad_balanced
     - profile: offroad_shortest
 
-  graph.encoded_values: car_access, car_average_speed, road_access, surface, track_type, road_class, ferry_speed, max_speed, road_environment
+  graph.encoded_values: car_access, car_average_speed, road_access, surface, track_type, road_class, ferry_speed, max_speed, road_environment,is_gumbalkan_barrier
   custom_models.enabled: true
   track_custom_encoded_values: [barrier]
 

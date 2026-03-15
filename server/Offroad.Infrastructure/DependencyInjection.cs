@@ -39,7 +39,7 @@ namespace Routing.Infrastructure
                     PropertyNameCaseInsensitive = true
                 };
 
-                options.Converters.Add(new GraphHopperDetailSegmentConverter());
+                options.Converters.Add(new GraphHopperAttributeIntervalConverterFactory());
 
                 return options;
             });

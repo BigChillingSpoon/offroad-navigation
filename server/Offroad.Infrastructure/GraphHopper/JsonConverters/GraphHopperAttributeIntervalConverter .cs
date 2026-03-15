@@ -9,9 +9,9 @@ using Routing.Infrastructure.GraphHopper.DTOs;
 
 namespace Routing.Infrastructure.GraphHopper.JsonConverters
 {
-    public sealed class GraphHopperDetailSegmentConverter : JsonConverter<GraphHopperAttributeInterval>
+    public sealed class GraphHopperAttributeIntervalConverter<T> : JsonConverter<GraphHopperAttributeInterval<T>>
     {
-        public override GraphHopperAttributeInterval Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override GraphHopperAttributeInterval<T> Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             if (reader.TokenType != JsonTokenType.StartArray)
                 throw new JsonException("Expected array for detail segment");
@@ -23,15 +23,14 @@ namespace Routing.Infrastructure.GraphHopper.JsonConverters
             var to = reader.GetInt32();
 
             reader.Read();
-            var value = reader.GetString() ?? string.Empty;
-
+            var value = JsonSerializer.Deserialize<T>(ref reader, options);
             // move to EndArray
             reader.Read();
 
             if (reader.TokenType != JsonTokenType.EndArray)
                 throw new JsonException("Expected EndArray");
 
-            return new GraphHopperAttributeInterval
+            return new GraphHopperAttributeInterval<T>
             (
                 FromIndex: from,
                 ToIndex: to,
@@ -39,12 +38,12 @@ namespace Routing.Infrastructure.GraphHopper.JsonConverters
             );
         }
 
-        public override void Write(Utf8JsonWriter writer, GraphHopperAttributeInterval value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, GraphHopperAttributeInterval<T> interval, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
-            writer.WriteNumberValue(value.FromIndex);
-            writer.WriteNumberValue(value.ToIndex);
-            writer.WriteStringValue(value.Value);
+            JsonSerializer.Serialize(writer, interval.FromIndex, options);
+            JsonSerializer.Serialize(writer, interval.ToIndex, options);
+            JsonSerializer.Serialize(writer, interval.Value, options);
             writer.WriteEndArray();
         }
     }

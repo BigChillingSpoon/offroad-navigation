@@ -37,12 +37,21 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
     public sealed class GraphHopperDetails
     {
         [JsonPropertyName("surface")]
-        public List<GraphHopperAttributeInterval> SurfaceIntervals { get; set; } = new();
+        public List<GraphHopperAttributeInterval<string>> SurfaceIntervals { get; set; } = new();
 
         [JsonPropertyName("road_class")]
-        public List<GraphHopperAttributeInterval> RoadClassIntervals { get; set; } = new();
+        public List<GraphHopperAttributeInterval<string>> RoadClassIntervals { get; set; } = new();
 
         [JsonPropertyName("track_type")]
-        public List<GraphHopperAttributeInterval> TrackTypeIntervals { get; set; } = new();
+        public List<GraphHopperAttributeInterval<string>> TrackTypeIntervals { get; set; } = new();
+
+        //may be removed in the future,  at the moment this is not used in any logic, but it can be useful for debugging and for future features
+        [JsonPropertyName("car_access")]
+        public List<GraphHopperAttributeInterval<bool>> CarAccessIntervals { get; set; } = new();
+
+        [JsonPropertyName("road_access")]
+        public List<GraphHopperAttributeInterval<string>> RoadAccessIntervals { get; set; } = new();
+        [JsonPropertyName("road_environment")]
+        public List<GraphHopperAttributeInterval<string>> RoadEnvironmentIntervals { get; set; } = new();
     }
 }

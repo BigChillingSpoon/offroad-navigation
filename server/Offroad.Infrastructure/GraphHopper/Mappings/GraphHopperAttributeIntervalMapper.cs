@@ -5,7 +5,7 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
 {
     internal static class GraphHopperAttributeIntervalMapper
     {
-        public static IReadOnlyList<RoadClassInterval> MapRoadClass(IReadOnlyList<GraphHopperAttributeInterval> source)
+        public static IReadOnlyList<RoadClassInterval> MapRoadClass(IReadOnlyList<GraphHopperAttributeInterval<string>> source)
         {
             return source
                .Select(s => new RoadClassInterval
@@ -17,7 +17,7 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                .ToList();
         }
 
-        public static IReadOnlyList<SurfaceInterval> MapSurface(IReadOnlyList<GraphHopperAttributeInterval> source)
+        public static IReadOnlyList<SurfaceInterval> MapSurface(IReadOnlyList<GraphHopperAttributeInterval<string>> source)
         {
             return source
                .Select(s => new SurfaceInterval
@@ -29,7 +29,7 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                .ToList();
         }
 
-        public static IReadOnlyList<TrackTypeInterval> MapTrackType(IReadOnlyList<GraphHopperAttributeInterval> source)
+        public static IReadOnlyList<TrackTypeInterval> MapTrackType(IReadOnlyList<GraphHopperAttributeInterval<string>> source)
         {
             return source
                .Select(s => new TrackTypeInterval

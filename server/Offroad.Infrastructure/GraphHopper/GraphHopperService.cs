@@ -60,6 +60,7 @@ namespace Routing.Infrastructure.GraphHopper
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, CancellationToken cancellationToken)
         {
             var url = BuildUrl();
+            var jsonPayload = JsonSerializer.Serialize(requestPayload, _jsonOptions);
             //todo create retry logic
             try
             {
