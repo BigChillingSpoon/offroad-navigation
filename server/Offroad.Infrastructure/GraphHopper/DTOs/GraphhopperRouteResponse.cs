@@ -53,5 +53,9 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
         public List<GraphHopperAttributeInterval<string>> RoadAccessIntervals { get; set; } = new();
         [JsonPropertyName("road_environment")]
         public List<GraphHopperAttributeInterval<string>> RoadEnvironmentIntervals { get; set; } = new();
+
+        [JsonPropertyName("is_gumbalkan_barrier")]
+        public List<GraphHopperAttributeInterval<bool>> BarrierIntervals { get; set; } = new();
     }
 }
+
