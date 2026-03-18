@@ -40,5 +40,17 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                })
                .ToList();
         }
+        public static IReadOnlyList<BarrierInterval> MapBarriers(IReadOnlyList<GraphHopperAttributeInterval<string>> source)
+        {
+            return source
+               .Where(s => s.Value != "none") //we can ignore íntervals without barriers
+               .Select(s => new BarrierInterval
+               {
+                   FromIndex = s.FromIndex,
+                   ToIndex = s.ToIndex,
+                   BarrierType = GraphHopperBarrierMapper.Map(s.Value)
+               })
+               .ToList();
+        }
     }
 }

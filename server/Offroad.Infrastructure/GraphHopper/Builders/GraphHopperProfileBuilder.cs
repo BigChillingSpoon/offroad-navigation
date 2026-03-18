@@ -44,7 +44,7 @@ namespace Routing.Infrastructure.GraphHopper.Builders
             {
                 customModel.Priority.Add(new PriorityStatement
                 {
-                    IfCondition = "is_gumbalkan_barrier == true",
+                    IfCondition = "custom_barrier == true",
                     MultiplyBy = 0.0
                 });
             }

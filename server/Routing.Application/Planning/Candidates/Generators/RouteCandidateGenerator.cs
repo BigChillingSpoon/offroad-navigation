@@ -47,8 +47,11 @@ namespace Routing.Application.Planning.Candidates.Generators
                 route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex),
                 route.TrackTypeIntervals.EnsureFullCoverage(maxEdgeIndex));
 
+            var barriers = BarrierBuilder.Build(route.BarrierIntervals, geometry);
+
             return TripCandidate.Create(
                 segments,
+                barriers,
                 route.Distance,
                 route.Duration,
                 route.Ascend,

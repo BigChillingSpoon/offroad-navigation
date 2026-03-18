@@ -9,5 +9,6 @@ namespace Routing.Application.Contracts.Responses
         public TripType Type { get; init; }
         public TripDetails Details { get; init; }
         public TripMetrics Metrics { get; init; }
+        public IReadOnlyList<TripEvent> Events { get; init; }
     }
 }

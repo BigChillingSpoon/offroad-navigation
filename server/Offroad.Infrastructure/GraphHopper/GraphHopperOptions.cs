@@ -15,7 +15,7 @@ namespace Routing.Infrastructure.GraphHopper
         public bool CalcPoints { get; } = true;
         public bool PointsEncoded { get; } = true;
         public bool Elevation { get; } = true;
-        public string[] RequestedDetails { get; } = { "road_class", "surface", "track_type", "road_access", "car_access", "road_environment", "is_gumbalkan_barrier" };
+        public string[] RequestedDetails { get; } = { "road_class", "surface", "track_type", "road_access", "car_access", "road_environment", "custom_barrier" };
         public string Algorithm { get; } = "alternative_route";
 
         //specifies how many alternatives can be returned

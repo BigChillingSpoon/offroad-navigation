@@ -15,12 +15,14 @@ namespace Routing.Application.Mappings
             if (trip.Plan is null)
                 throw new InvalidOperationException("TripPlan is missing.");
 
+            var tripEvents = TripEventMapper.MapToEvents(trip.Plan);
             return new() {
                 Id = trip.Id,
                 Name = trip.Name,
                 Type = trip.Type,
                 Metrics = trip.Plan.ToTripMetrics(),
                 Details = trip.Plan.Segments.ToTripDetails(),
+                Events = tripEvents
             };
         }
 

@@ -20,12 +20,14 @@ namespace Routing.Application.Planning.Candidates.Models
         public double OffroadRatio => TotalDistanceMeters > 0 ? OffroadDistanceMeters / TotalDistanceMeters : 0;
         public double ElevationGainMeters { get; }
         public double ElevationLossMeters { get; }
-        public IReadOnlyList<Segment> Segments { get; init; }
+        public IReadOnlyList<Segment> Segments { get; }
+        public IReadOnlyList<RoadBarrier> Barriers { get; }
         public IReadOnlyDictionary<string, object>? Metadata { get; init; }
 
-        private TripCandidate(IReadOnlyList<Segment> segments, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
+        private TripCandidate(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
         {
             Segments = segments;
+            Barriers = barriers;
             TotalDistanceMeters = totalDistance;
             Duration = duration;
             OffroadDistanceMeters = offroadDistance;
@@ -33,11 +35,11 @@ namespace Routing.Application.Planning.Candidates.Models
             ElevationLossMeters = elevationLoss;
         }
 
-        public static TripCandidate Create(IReadOnlyList<Segment> segments, double totalDistance, TimeSpan duration, double elevationGain, double elevationLoss)
+        public static TripCandidate Create(IReadOnlyList<Segment> segments,IReadOnlyList<RoadBarrier> barriers, double totalDistance, TimeSpan duration, double elevationGain, double elevationLoss)
         {
             var offroadDistance = segments.Where(s => s.IsOffroad).Sum(s => s.DistanceMeters);
             Validate(totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
-            return new TripCandidate(segments, totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
+            return new TripCandidate(segments, barriers, totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
         }
         private static void Validate(double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
         {

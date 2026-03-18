@@ -13,5 +13,6 @@ namespace Routing.Application.Planning.Candidates.Models
         public IReadOnlyList<RoadClassInterval> RoadClassIntervals { get; init; }
         public IReadOnlyList<SurfaceInterval> SurfaceIntervals { get; init; }
         public IReadOnlyList<TrackTypeInterval> TrackTypeIntervals { get; init; }
+        public IReadOnlyList<BarrierInterval> BarrierIntervals { get; init; }
     }
 }
