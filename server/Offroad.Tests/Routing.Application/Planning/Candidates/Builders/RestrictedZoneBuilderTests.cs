@@ -1,0 +1,249 @@
+using NetTopologySuite.Features;
+using NetTopologySuite.Geometries;
+using Routing.Application.Planning.Candidates.Builders;
+using Routing.Domain.Enums;
+using Routing.Domain.ValueObjects;
+using Coordinate = Routing.Domain.ValueObjects.Coordinate;
+
+namespace Offroad.Tests.Routing.Application.Planning.Candidates.Builders;
+
+public class RestrictedZoneBuilderTests
+{
+    #region Empty / No Restriction Tests
+
+    [Fact]
+    public void Build_EmptyGeometry_ReturnsEmptyList()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var geometry = new List<Coordinate>();
+        var roadAccessIntervals = Array.Empty<RoadAccessInterval>();
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public void Build_NoRestrictions_ReturnsEmptyList()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(100.0, 100.0, 101.0, 101.0));
+        var geometry = CreateGeometry(10);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 9, RoadAccess = RoadAccessType.Yes }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Empty(result);
+    }
+
+    #endregion
+
+    #region Base Layer (Road Access) Tests
+
+    [Fact]
+    public void Build_OnlyBaseLayer_ReturnsCorrectZones()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var geometry = CreateGeometry(10);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 1, RoadAccess = RoadAccessType.Yes },
+            new RoadAccessInterval { FromIndex = 2, ToIndex = 5, RoadAccess = RoadAccessType.Forestry },
+            new RoadAccessInterval { FromIndex = 6, ToIndex = 9, RoadAccess = RoadAccessType.Yes }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(RestrictionType.Forestry, result[0].RestrictionType);
+        Assert.Equal(2, result[0].FromIndex);
+        Assert.Equal(5, result[0].ToIndex);
+    }
+
+    [Fact]
+    public void Build_RouteEndsInsideRestriction_ClosesZoneCorrectly()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var geometry = CreateGeometry(11);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Yes },
+            new RoadAccessInterval { FromIndex = 5, ToIndex = 10, RoadAccess = RoadAccessType.Private }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(RestrictionType.Private, result[0].RestrictionType);
+        Assert.Equal(5, result[0].FromIndex);
+        Assert.Equal(10, result[0].ToIndex);
+    }
+
+    [Fact]
+    public void Build_UnknownAccess_MappedAsUnknown()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var geometry = CreateGeometry(5);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Unknown }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(RestrictionType.Unknown, result[0].RestrictionType);
+        Assert.Equal(0, result[0].FromIndex);
+        Assert.Equal(4, result[0].ToIndex);
+    }
+
+    #endregion
+
+    #region Top Layer (National Parks) Tests
+
+    [Fact]
+    public void Build_OnlyTopLayer_ReturnsCorrectZones()
+    {
+        // Arrange
+        // Points at longitude [0.000 .. 0.010], latitude = 1.0
+        // Park polygon covers longitude 0.0035 to 0.0065 => points at index 4, 5, 6
+        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+            minLon: 0.0035, minLat: 0.5,
+            maxLon: 0.0065, maxLat: 1.5));
+        var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 10, RoadAccess = RoadAccessType.Yes }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(RestrictionType.NationalPark, result[0].RestrictionType);
+        Assert.Equal(4, result[0].FromIndex);
+        Assert.Equal(6, result[0].ToIndex);
+    }
+
+    #endregion
+
+    #region Painter's Algorithm Tests
+
+    [Fact]
+    public void Build_PaintersAlgorithm_Overlap_OverwritesCorrectly()
+    {
+        // Arrange
+        // Base layer: Forestry across entire route (0 to 10)
+        // Top layer: Park polygon overwrites points 4, 5, 6
+        // Canvas: [F, F, F, F, NP, NP, NP, F, F, F, F]
+        // Expected: Forestry(0-3), NationalPark(4-6), Forestry(7-10)
+        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+            minLon: 0.0035, minLat: 0.5,
+            maxLon: 0.0065, maxLat: 1.5));
+        var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 10, RoadAccess = RoadAccessType.Forestry }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Equal(3, result.Count);
+
+        // Forestry before park
+        Assert.Equal(RestrictionType.Forestry, result[0].RestrictionType);
+        Assert.Equal(0, result[0].FromIndex);
+        Assert.Equal(3, result[0].ToIndex);
+
+        // National Park overlay
+        Assert.Equal(RestrictionType.NationalPark, result[1].RestrictionType);
+        Assert.Equal(4, result[1].FromIndex);
+        Assert.Equal(6, result[1].ToIndex);
+
+        // Forestry after park
+        Assert.Equal(RestrictionType.Forestry, result[2].RestrictionType);
+        Assert.Equal(7, result[2].FromIndex);
+        Assert.Equal(10, result[2].ToIndex);
+    }
+
+    [Fact]
+    public void Build_PaintersAlgorithm_ParkCoversEntireBaseLayer_ReturnsOnlyParkZone()
+    {
+        // Arrange
+        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+            minLon: -1.0, minLat: 0.0,
+            maxLon: 1.0, maxLat: 2.0));
+        var geometry = CreateGeometryOnLine(5, latitude: 1.0, startLongitude: 0.0, step: 0.001);
+        var roadAccessIntervals = new[]
+        {
+            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Private }
+        };
+
+        // Act
+        var result = sut.Build(roadAccessIntervals, geometry);
+
+        // Assert
+        Assert.Single(result);
+        Assert.Equal(RestrictionType.NationalPark, result[0].RestrictionType);
+        Assert.Equal(0, result[0].FromIndex);
+        Assert.Equal(4, result[0].ToIndex);
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private static List<Coordinate> CreateGeometry(int count)
+    {
+        return Enumerable.Range(0, count)
+            .Select(i => new Coordinate(i * 0.001, i * 0.001))
+            .ToList();
+    }
+
+    private static List<Coordinate> CreateGeometryOnLine(int count, double latitude, double startLongitude, double step)
+    {
+        return Enumerable.Range(0, count)
+            .Select(i => new Coordinate(latitude, startLongitude + i * step))
+            .ToList();
+    }
+
+    private static FeatureCollection CreateMockParksCollection(double minLon, double minLat, double maxLon, double maxLat)
+    {
+        var factory = new GeometryFactory();
+        var ring = factory.CreateLinearRing(new[]
+        {
+            new NetTopologySuite.Geometries.Coordinate(minLon, minLat),
+            new NetTopologySuite.Geometries.Coordinate(maxLon, minLat),
+            new NetTopologySuite.Geometries.Coordinate(maxLon, maxLat),
+            new NetTopologySuite.Geometries.Coordinate(minLon, maxLat),
+            new NetTopologySuite.Geometries.Coordinate(minLon, minLat)
+        });
+        var polygon = factory.CreatePolygon(ring);
+
+        var collection = new FeatureCollection();
+        collection.Add(new Feature(polygon, new AttributesTable()));
+        return collection;
+    }
+
+    #endregion
+}
