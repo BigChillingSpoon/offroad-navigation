@@ -46,6 +46,7 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 RoadClassIntervals = GraphHopperAttributeIntervalMapper.MapRoadClass(path.Details.RoadClassIntervals),
                 TrackTypeIntervals = GraphHopperAttributeIntervalMapper.MapTrackType(path.Details.TrackTypeIntervals),
                 BarrierIntervals = GraphHopperAttributeIntervalMapper.MapBarriers(path.Details.BarrierIntervals),
+                RoadAccessInervals = GraphHopperAttributeIntervalMapper.MapRoadAccess(path.Details.RoadAccessIntervals),
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,

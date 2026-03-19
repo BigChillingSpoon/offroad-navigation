@@ -11,10 +11,12 @@ namespace Routing.Domain.Models
         public double ElevationLossMeters { get; }
         public IReadOnlyList<Segment> Segments { get; }
         public IReadOnlyList<RoadBarrier> Barriers { get; }
+        public IReadOnlyList<RestrictedZone> RestrictedZones { get; }
+
         //for EFCore
         private TripPlan() { }
 
-        private TripPlan(double distance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null)
+        private TripPlan(double distance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
         {
             TotalDistanceMeters = distance;
             Duration = duration;
@@ -23,12 +25,13 @@ namespace Routing.Domain.Models
             ElevationGainMeters = elevationGain;
             ElevationLossMeters = elevationLoss;
             Barriers = barriers ?? new List<RoadBarrier>();
+            RestrictedZones = restrictedZones ?? new List<RestrictedZone>();
         }
 
-        public static TripPlan Create(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null)
+        public static TripPlan Create(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
         {
             Validate(totalDistance, offroadDistance, duration, elevationGain, elevationLoss);
-            return new TripPlan(totalDistance, offroadDistance, duration, elevationGain, elevationLoss, segments, barriers);
+            return new TripPlan(totalDistance, offroadDistance, duration, elevationGain, elevationLoss, segments, barriers, restrictedZones);
         }
 
         private static void Validate(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss)

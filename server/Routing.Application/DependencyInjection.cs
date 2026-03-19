@@ -13,6 +13,9 @@ using Routing.Application.Loops;
 using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Intents;
+using Routing.Application.Planning.Candidates.Builders;
+using NetTopologySuite.Features;
+using NetTopologySuite.IO;
 
 namespace Routing.Domain
 {
@@ -41,8 +44,12 @@ namespace Routing.Domain
             services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();
             services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
             services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
+            services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
             //services.AddScoped<ICandidateGenerator<LoopIntent>, Loop>
 
+            var geoJsonPath = "../../routing/graphhopper/data/restricted_areas/cz_national_parks.geojson.json"; 
+            var parksCollection = new GeoJsonReader().Read<FeatureCollection>(File.ReadAllText(geoJsonPath));
+            services.AddSingleton(parksCollection);
 
             return services;
         }

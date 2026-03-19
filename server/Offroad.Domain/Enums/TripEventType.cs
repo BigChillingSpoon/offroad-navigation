@@ -10,11 +10,8 @@ namespace Routing.Domain.Enums
     [JsonConverter(typeof(JsonStringEnumConverter))]
     public enum TripEventType
     {
-        Barrier,
-        PrivateRoad,
-        ForestryRoad,
-        AgriculturalRoad,
-        NationalPark,
+        Restriction,
+        Barrier, 
         Checkpoint,
         Hazard
     }

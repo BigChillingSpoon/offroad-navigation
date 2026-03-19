@@ -21,17 +21,16 @@ namespace Routing.Application.Mappings
                 }));
             }
 
-            //TODO -after mapping restricted zones, add them as interval events, currently we dont have any logic for them in the planner, but in the future we might want to add some logic to avoid them or at least warn users about them
-            //if (plan.RestrictedZones != null)
-            //{
-            //    apiEvents.AddRange(plan.RestrictedZones.Select(z => new TripEventDto
-            //    {
-            //        Type = "restriction",
-            //        SubType = z.Type.ToString(),
-            //        StartIndex = z.StartIndex,
-            //        EndIndex = z.EndIndex
-            //    }));
-            //}
+            if (plan.RestrictedZones != null)
+                {
+                    tripEvents.AddRange(plan.RestrictedZones.Select(z => new IntervalEvent
+                    {
+                        Type = TripEventType.Restriction.ToString(),
+                        SubType = z.RestrictionType.ToString(),
+                        FromIndex = z.FromIndex,
+                        ToIndex = z.ToIndex
+                    }));
+                }
 
             return tripEvents.ToList(); //add some order by maybe
         }

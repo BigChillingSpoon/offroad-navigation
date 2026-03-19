@@ -21,7 +21,7 @@ namespace Routing.Application.Contracts.Responses
 
     public sealed record IntervalEvent : TripEvent
     {
-        public int StartIndex { get; init; }
-        public int EndIndex { get; init; }
+        public int FromIndex { get; init; }
+        public int ToIndex { get; init; }
     }
 }

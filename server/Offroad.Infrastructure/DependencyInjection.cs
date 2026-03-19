@@ -4,7 +4,6 @@ using Routing.Infrastructure.GraphHopper;
 using Routing.Infrastructure.Repositories;
 using Routing.Application.Abstractions;
 using Microsoft.Extensions.Configuration;
-using System.ComponentModel.DataAnnotations;
 using Routing.Infrastructure.GraphHopper.JsonConverters;
 using System.Text.Json;
 using Routing.Infrastructure.GraphHopper.Mappings;
@@ -39,7 +38,7 @@ namespace Routing.Infrastructure
                     PropertyNameCaseInsensitive = true
                 };
 
-                options.Converters.Add(new GraphHopperAttributeIntervalConverterFactory());
+                options.Converters.Add(new GraphHopperAttributeIntervalConverterFactory());   
 
                 return options;
             });

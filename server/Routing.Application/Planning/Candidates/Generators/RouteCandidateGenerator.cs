@@ -1,4 +1,6 @@
-﻿using Routing.Application.Abstractions;
+﻿using NetTopologySuite.Features;
+using NetTopologySuite.IO;
+using Routing.Application.Abstractions;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
@@ -14,10 +16,12 @@ namespace Routing.Application.Planning.Candidates.Generators
     public sealed class RouteCandidateGenerator : ICandidateGenerator<RouteIntent>
     {
         private readonly IRoutingProvider _routingProvider;
+        private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
 
-        public RouteCandidateGenerator(IRoutingProvider routingProvider)
+        public RouteCandidateGenerator(IRoutingProvider routingProvider, IRestrictedZoneBuilder restrictedZoneBuilder)
         {
             _routingProvider = routingProvider;
+            _restrictedZoneBuilder = restrictedZoneBuilder;
         }
 
         public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, PlannerSettings settings, CancellationToken ct)
@@ -49,9 +53,12 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var barriers = BarrierBuilder.Build(route.BarrierIntervals, geometry);
 
+            var restrictedZones = _restrictedZoneBuilder.Build(route.RoadAccessInervals, geometry);
+
             return TripCandidate.Create(
                 segments,
                 barriers,
+                restrictedZones,
                 route.Distance,
                 route.Duration,
                 route.Ascend,
