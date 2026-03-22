@@ -17,7 +17,7 @@ namespace Routing.Application.Planning.Planner
             _candidateGeneratorFactory = candidateGeneratorFactory;
             _candidateScorerFactory = candidateScorerFactory;
         }
-        public async Task<List<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
+        public async Task<IReadOnlyList<TripPlan>> PlanAsync<TIntent>(TIntent intent, ITripGoal<TIntent> goal, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct) where TIntent : ITripIntent
         {
             var generator = _candidateGeneratorFactory.Resolve<TIntent>();
             var candidates = await generator.GenerateCandidatesAsync(intent, settings, ct);
