@@ -2,8 +2,10 @@ using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Contracts.Responses;
 using Routing.Application.Mappings;
+using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
+using Routing.Domain.Exceptions;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 using Microsoft.Extensions.Logging;
@@ -54,10 +56,15 @@ namespace Routing.Application.Loops.Commands
                 var loopsResult = await _loopFinder.FindLoopsAsync(intent, profile, ct);
                 return loopsResult.Bind<IReadOnlyList<TripResult>>(ls => ls.Select(l => l.ToTripResult()).ToList());
             }
-            catch (Exception ex)
+            catch (RoutingProviderException ex)
             {
-                _logger.LogError(ex, "Loop finding failed");
-                return PlanningErrorMappings.MapError(ex);
+                _logger.LogWarning(ex, "Routing provider failed during loop finding");
+                return PlanningErrorMappings.MapRoutingProviderError(ex);
+            }
+            catch (DomainException ex)
+            {
+                _logger.LogWarning(ex, "Domain validation failed during loop finding");
+                return Error.Validation(ex.Message);
             }
         }
     }

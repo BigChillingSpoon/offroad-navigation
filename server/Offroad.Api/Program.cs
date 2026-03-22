@@ -1,3 +1,4 @@
+using Offroad.Api.Infrastructure;
 using Routing.Infrastructure;
 using Routing.Application;
 using Routing.Domain;
@@ -34,6 +35,10 @@ namespace Offroad.Api
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
+            // Exception Handling
+            builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+            builder.Services.AddProblemDetails();
+
             // Project Dependencies
             builder.Services.AddRoutingApplication();
             builder.Services.AddRoutingInfrastructure(builder.Configuration);
@@ -49,6 +54,7 @@ namespace Offroad.Api
             }
 
             // Global Middleware
+            app.UseExceptionHandler();
             app.UseHttpsRedirection();
             app.UseAuthorization();
 

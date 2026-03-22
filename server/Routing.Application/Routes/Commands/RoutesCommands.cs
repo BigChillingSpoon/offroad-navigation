@@ -2,8 +2,10 @@ using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Contracts.Responses;
 using Routing.Application.Mappings;
+using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
+using Routing.Domain.Exceptions;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 using Microsoft.Extensions.Logging;
@@ -56,12 +58,16 @@ namespace Routing.Application.Routes.Commands
                 return routeResult.Bind<TripResult>(r =>
                      r.ToTripResult()
                 );
-
             }
-            catch (Exception ex)
+            catch (RoutingProviderException ex)
             {
-                _logger.LogError(ex, "Route planning failed");
-                return PlanningErrorMappings.MapError(ex);
+                _logger.LogWarning(ex, "Routing provider failed during route planning");
+                return PlanningErrorMappings.MapRoutingProviderError(ex);
+            }
+            catch (DomainException ex)
+            {
+                _logger.LogWarning(ex, "Domain validation failed during route planning");
+                return Error.Validation(ex.Message);
             }
         }
     }
