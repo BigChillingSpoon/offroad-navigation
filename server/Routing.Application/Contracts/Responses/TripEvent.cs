@@ -8,8 +8,8 @@ namespace Routing.Application.Contracts.Responses
     [JsonDerivedType(typeof(IntervalEvent))]
     public abstract record TripEvent
     {
-        public string Type { get; init; } // "barrier", "private_road", atd.
-        public string SubType { get; init; } // "gate", "bollard", "toll_gantry", "ferry", atd.
+        public required TripEventType Type { get; init; }
+        public required string SubType { get; init; }
 
     }
 

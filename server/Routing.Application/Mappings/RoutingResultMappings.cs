@@ -21,7 +21,7 @@ namespace Routing.Application.Mappings
                 Type = trip.Type,
                 Metrics = trip.Plan.ToTripMetrics(),
                 Details = trip.Plan.ToTripDetails(),
-                Events = TripEventMapper.MapToEvents(trip.Plan)
+                Events = TripEventMappings.MapToEvents(trip.Plan)
             };
         }
 
