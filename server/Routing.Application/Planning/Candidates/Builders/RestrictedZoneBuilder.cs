@@ -12,7 +12,6 @@ namespace Routing.Application.Planning.Candidates.Builders
     public class RestrictedZoneBuilder : IRestrictedZoneBuilder
     {
         private readonly GeometryFactory _geometryFactory;
-        // Místo obyèejné kolekce budeme držet vysoce optimalizovaný vyhledávací strom!
         private readonly STRtree<IPreparedGeometry> _parksSpatialIndex;
 
         public RestrictedZoneBuilder(FeatureCollection parksCollection)
@@ -38,12 +37,12 @@ namespace Routing.Application.Planning.Candidates.Builders
             return index;
         }
 
-        public IReadOnlyList<RestrictedZone> Build(
-            IReadOnlyList<RoadAccessInterval> roadAccessIntervals,
+        public IReadOnlyList<Interval<RestrictionType>> Build(
+            IReadOnlyList<Interval<RoadAccessType>> roadAccessIntervals,
             IReadOnlyList<Coordinate> geometry)
         {
             if (geometry == null || geometry.Count == 0)
-                return Array.Empty<RestrictedZone>();
+                return Array.Empty<Interval<RestrictionType>>();
 
             var canvas = new RestrictionType?[geometry.Count];
 
@@ -53,13 +52,13 @@ namespace Routing.Application.Planning.Candidates.Builders
             return ExtractZones(canvas);
         }
 
-        private static void ApplyRoadAccessLayer(RestrictionType?[] canvas, IReadOnlyList<RoadAccessInterval> roadAccessIntervals)
+        private static void ApplyRoadAccessLayer(RestrictionType?[] canvas, IReadOnlyList<Interval<RoadAccessType>> roadAccessIntervals)
         {
             if (roadAccessIntervals == null) return;
 
-            foreach (var interval in roadAccessIntervals.Where(r => r.RoadAccess != RoadAccessType.Yes))
+            foreach (var interval in roadAccessIntervals.Where(r => r.Value != RoadAccessType.Yes))
             {
-                var restriction = MapRoadAccessToRestriction(interval.RoadAccess);
+                var restriction = MapRoadAccessToRestriction(interval.Value);
 
                 for (int i = interval.FromIndex; i <= interval.ToIndex; i++)
                     canvas[i] = restriction;
@@ -75,23 +74,22 @@ namespace Routing.Application.Planning.Candidates.Builders
                 var point = _geometryFactory.CreatePoint(
                     new NetTopologySuite.Geometries.Coordinate(geometry[i].Longitude, geometry[i].Latitude));
 
-                // 1. Zjistíme, jestli jsme vùbec v "krabici" nìjakého parku (O(1) operace)
                 var candidateParks = _parksSpatialIndex.Query(point.EnvelopeInternal);
 
-                // 2. Pøesný výpoèet udìláme jen na kandidátech (vìtšinou 0, max 1)
                 foreach (var parkGeom in candidateParks)
                 {
                     if (parkGeom.Contains(point))
                     {
                         canvas[i] = RestrictionType.NationalPark;
-                        break; // Ušetøíme èas, pokud by se náhodou parky pøekrývaly
+                        break;
                     }
                 }
             }
         }
-        private static IReadOnlyList<RestrictedZone> ExtractZones(RestrictionType?[] canvas)
+
+        private static IReadOnlyList<Interval<RestrictionType>> ExtractZones(RestrictionType?[] canvas)
         {
-            var zones = new List<RestrictedZone>();
+            var zones = new List<Interval<RestrictionType>>();
             RestrictionType? current = null;
             int start = 0;
 
@@ -101,28 +99,14 @@ namespace Routing.Application.Planning.Candidates.Builders
                     continue;
 
                 if (current.HasValue)
-                {
-                    zones.Add(new RestrictedZone
-                    {
-                        RestrictionType = current.Value,
-                        FromIndex = start,
-                        ToIndex = i - 1
-                    });
-                }
+                    zones.Add(new Interval<RestrictionType>(start, i - 1, current.Value));
 
                 current = canvas[i];
                 start = i;
             }
 
             if (current.HasValue)
-            {
-                zones.Add(new RestrictedZone
-                {
-                    RestrictionType = current.Value,
-                    FromIndex = start,
-                    ToIndex = canvas.Length - 1
-                });
-            }
+                zones.Add(new Interval<RestrictionType>(start, canvas.Length - 1, current.Value));
 
             return zones;
         }

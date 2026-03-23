@@ -1,69 +1,26 @@
-﻿using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Planning.Extensions
 {
-    internal static class RouteAttributeIntervalExtensions
+    internal static class IntervalExtensions
     {
-        public static IReadOnlyList<SurfaceInterval> EnsureFullCoverage(this IReadOnlyList<SurfaceInterval> source, int maxEdgeIndex)
-        {
-            return source.FillMissingIntervals(
-                maxEdgeIndex,
-                (from, to) => new SurfaceInterval
-                {
-                    FromIndex = from,
-                    ToIndex = to,
-                    Surface = SurfaceType.UNKNOWN
-                });
-        }
-
-        public static IReadOnlyList<RoadClassInterval> EnsureFullCoverage(this IReadOnlyList<RoadClassInterval> source, int maxEdgeIndex)
-        {
-            return source.FillMissingIntervals(
-                maxEdgeIndex,
-                (from, to) => new RoadClassInterval
-                {
-                    FromIndex = from,
-                    ToIndex = to,
-                    RoadClass = RoadClassType.UNKNOWN,
-                });
-        }
-
-        public static IReadOnlyList<TrackTypeInterval> EnsureFullCoverage(this IReadOnlyList<TrackTypeInterval> source, int maxEdgeIndex)
-        {
-            return source.FillMissingIntervals(
-                maxEdgeIndex,
-                (from, to) => new TrackTypeInterval
-                {
-                    FromIndex = from,
-                    ToIndex = to,
-                    TrackType = TrackType.UNKNOWN,
-                });
-        }
-
-        private static IReadOnlyList<T> FillMissingIntervals<T>(this IEnumerable<T> source, int maxEdgeIndex, Func<int, int, T> createUnknownSegment)
-        where T : RouteAttributeInterval
+        public static IReadOnlyList<Interval<T>> EnsureFullCoverage<T>(this IReadOnlyList<Interval<T>> source, int maxEdgeIndex, T defaultValue)
         {
             var ordered = source.OrderBy(s => s.FromIndex).ToList();
-            var result = new List<T>();
+            var result = new List<Interval<T>>();
             int currentIndex = 0;
 
-            foreach (var segment in ordered)
+            foreach (var interval in ordered)
             {
-                //inserts unknown segment before existing segment
-                if (segment.FromIndex > currentIndex)
-                    result.Add(createUnknownSegment(currentIndex, segment.FromIndex));
-                
-                //inserts existing segment
-                result.Add(segment);
-                currentIndex = segment.ToIndex;
+                if (interval.FromIndex > currentIndex)
+                    result.Add(new Interval<T>(currentIndex, interval.FromIndex, defaultValue));
+
+                result.Add(interval);
+                currentIndex = interval.ToIndex;
             }
 
-            //append last unknown segment if needed
             if (currentIndex < maxEdgeIndex)
-            {
-                result.Add(createUnknownSegment(currentIndex, maxEdgeIndex));
-            }
+                result.Add(new Interval<T>(currentIndex, maxEdgeIndex, defaultValue));
 
             return result;
         }

@@ -17,7 +17,7 @@ public class RestrictedZoneBuilderTests
         // Arrange
         var sut = new RestrictedZoneBuilder(new FeatureCollection());
         var geometry = new List<Coordinate>();
-        var roadAccessIntervals = Array.Empty<RoadAccessInterval>();
+        var roadAccessIntervals = Array.Empty<Interval<RoadAccessType>>();
 
         // Act
         var result = sut.Build(roadAccessIntervals, geometry);
@@ -34,7 +34,7 @@ public class RestrictedZoneBuilderTests
         var geometry = CreateGeometry(10);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 9, RoadAccess = RoadAccessType.Yes }
+            new Interval<RoadAccessType>(0, 9, RoadAccessType.Yes)
         };
 
         // Act
@@ -56,9 +56,9 @@ public class RestrictedZoneBuilderTests
         var geometry = CreateGeometry(10);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 1, RoadAccess = RoadAccessType.Yes },
-            new RoadAccessInterval { FromIndex = 2, ToIndex = 5, RoadAccess = RoadAccessType.Forestry },
-            new RoadAccessInterval { FromIndex = 6, ToIndex = 9, RoadAccess = RoadAccessType.Yes }
+            new Interval<RoadAccessType>(0, 1, RoadAccessType.Yes),
+            new Interval<RoadAccessType>(2, 5, RoadAccessType.Forestry),
+            new Interval<RoadAccessType>(6, 9, RoadAccessType.Yes)
         };
 
         // Act
@@ -66,7 +66,7 @@ public class RestrictedZoneBuilderTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RestrictionType.Forestry, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.Forestry, result[0].Value);
         Assert.Equal(2, result[0].FromIndex);
         Assert.Equal(5, result[0].ToIndex);
     }
@@ -79,8 +79,8 @@ public class RestrictedZoneBuilderTests
         var geometry = CreateGeometry(11);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Yes },
-            new RoadAccessInterval { FromIndex = 5, ToIndex = 10, RoadAccess = RoadAccessType.Private }
+            new Interval<RoadAccessType>(0, 4, RoadAccessType.Yes),
+            new Interval<RoadAccessType>(5, 10, RoadAccessType.Private)
         };
 
         // Act
@@ -88,7 +88,7 @@ public class RestrictedZoneBuilderTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RestrictionType.Private, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.Private, result[0].Value);
         Assert.Equal(5, result[0].FromIndex);
         Assert.Equal(10, result[0].ToIndex);
     }
@@ -101,7 +101,7 @@ public class RestrictedZoneBuilderTests
         var geometry = CreateGeometry(5);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Unknown }
+            new Interval<RoadAccessType>(0, 4, RoadAccessType.Unknown)
         };
 
         // Act
@@ -109,7 +109,7 @@ public class RestrictedZoneBuilderTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RestrictionType.Unknown, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.Unknown, result[0].Value);
         Assert.Equal(0, result[0].FromIndex);
         Assert.Equal(4, result[0].ToIndex);
     }
@@ -122,15 +122,13 @@ public class RestrictedZoneBuilderTests
     public void Build_OnlyTopLayer_ReturnsCorrectZones()
     {
         // Arrange
-        // Points at longitude [0.000 .. 0.010], latitude = 1.0
-        // Park polygon covers longitude 0.0035 to 0.0065 => points at index 4, 5, 6
         var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
             minLon: 0.0035, minLat: 0.5,
             maxLon: 0.0065, maxLat: 1.5));
         var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 10, RoadAccess = RoadAccessType.Yes }
+            new Interval<RoadAccessType>(0, 10, RoadAccessType.Yes)
         };
 
         // Act
@@ -138,7 +136,7 @@ public class RestrictedZoneBuilderTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RestrictionType.NationalPark, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.NationalPark, result[0].Value);
         Assert.Equal(4, result[0].FromIndex);
         Assert.Equal(6, result[0].ToIndex);
     }
@@ -151,17 +149,13 @@ public class RestrictedZoneBuilderTests
     public void Build_PaintersAlgorithm_Overlap_OverwritesCorrectly()
     {
         // Arrange
-        // Base layer: Forestry across entire route (0 to 10)
-        // Top layer: Park polygon overwrites points 4, 5, 6
-        // Canvas: [F, F, F, F, NP, NP, NP, F, F, F, F]
-        // Expected: Forestry(0-3), NationalPark(4-6), Forestry(7-10)
         var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
             minLon: 0.0035, minLat: 0.5,
             maxLon: 0.0065, maxLat: 1.5));
         var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 10, RoadAccess = RoadAccessType.Forestry }
+            new Interval<RoadAccessType>(0, 10, RoadAccessType.Forestry)
         };
 
         // Act
@@ -171,17 +165,17 @@ public class RestrictedZoneBuilderTests
         Assert.Equal(3, result.Count);
 
         // Forestry before park
-        Assert.Equal(RestrictionType.Forestry, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.Forestry, result[0].Value);
         Assert.Equal(0, result[0].FromIndex);
         Assert.Equal(3, result[0].ToIndex);
 
         // National Park overlay
-        Assert.Equal(RestrictionType.NationalPark, result[1].RestrictionType);
+        Assert.Equal(RestrictionType.NationalPark, result[1].Value);
         Assert.Equal(4, result[1].FromIndex);
         Assert.Equal(6, result[1].ToIndex);
 
         // Forestry after park
-        Assert.Equal(RestrictionType.Forestry, result[2].RestrictionType);
+        Assert.Equal(RestrictionType.Forestry, result[2].Value);
         Assert.Equal(7, result[2].FromIndex);
         Assert.Equal(10, result[2].ToIndex);
     }
@@ -196,7 +190,7 @@ public class RestrictedZoneBuilderTests
         var geometry = CreateGeometryOnLine(5, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
-            new RoadAccessInterval { FromIndex = 0, ToIndex = 4, RoadAccess = RoadAccessType.Private }
+            new Interval<RoadAccessType>(0, 4, RoadAccessType.Private)
         };
 
         // Act
@@ -204,7 +198,7 @@ public class RestrictedZoneBuilderTests
 
         // Assert
         Assert.Single(result);
-        Assert.Equal(RestrictionType.NationalPark, result[0].RestrictionType);
+        Assert.Equal(RestrictionType.NationalPark, result[0].Value);
         Assert.Equal(0, result[0].FromIndex);
         Assert.Equal(4, result[0].ToIndex);
     }

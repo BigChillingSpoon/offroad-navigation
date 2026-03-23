@@ -42,11 +42,11 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 Duration = TimeSpan.FromMilliseconds(path.TimeMs),
                 Ascend = path.Ascend,
                 Descend = path.Descend,
-                SurfaceIntervals = GraphHopperAttributeIntervalMapper.MapSurface(path.Details.SurfaceIntervals),
-                RoadClassIntervals = GraphHopperAttributeIntervalMapper.MapRoadClass(path.Details.RoadClassIntervals),
-                TrackTypeIntervals = GraphHopperAttributeIntervalMapper.MapTrackType(path.Details.TrackTypeIntervals),
-                BarrierIntervals = GraphHopperAttributeIntervalMapper.MapBarriers(path.Details.BarrierIntervals),
-                RoadAccessInervals = GraphHopperAttributeIntervalMapper.MapRoadAccess(path.Details.RoadAccessIntervals),
+                SurfaceIntervals = GraphHopperAttributeIntervalMapper.Map(path.Details.SurfaceIntervals, GraphHopperSurfaceMapper.Map),
+                RoadClassIntervals = GraphHopperAttributeIntervalMapper.Map(path.Details.RoadClassIntervals, GraphHopperRoadClassMapper.Map),
+                TrackTypeIntervals = GraphHopperAttributeIntervalMapper.Map(path.Details.TrackTypeIntervals, GraphHopperTrackTypeMapper.Map),
+                BarrierIntervals = GraphHopperAttributeIntervalMapper.MapFiltered(path.Details.BarrierIntervals, GraphHopperBarrierMapper.Map, v => v != "none"),
+                RoadAccessIntervals = GraphHopperAttributeIntervalMapper.Map(path.Details.RoadAccessIntervals, GraphHopperRoadAccessMapper.Map),
                 Polyline = new EncodedPolyline
                 {
                     Points = path.Points,

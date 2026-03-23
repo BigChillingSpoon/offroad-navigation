@@ -1,7 +1,6 @@
-﻿using Offroad.Core.Exceptions;
+using Offroad.Core.Exceptions;
+using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Routing.Application.Planning.Candidates.Builders
 {
@@ -9,18 +8,18 @@ namespace Routing.Application.Planning.Candidates.Builders
     {
         public static List<Segment> Build(
             IReadOnlyList<Coordinate> geometry,
-            IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals,
-            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
+            IReadOnlyList<Interval<RoadClassType>> roadClassIntervals,
+            IReadOnlyList<Interval<SurfaceType>> surfaceIntervals,
+            IReadOnlyList<Interval<TrackType>> trackTypeIntervals)
         {
             var boundaries = CollectBoundaries(roadClassIntervals, surfaceIntervals, trackTypeIntervals);
             return CreateSegments(geometry, boundaries, roadClassIntervals, surfaceIntervals, trackTypeIntervals);
         }
 
         private static List<int> CollectBoundaries(
-            IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals,
-            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
+            IReadOnlyList<Interval<RoadClassType>> roadClassIntervals,
+            IReadOnlyList<Interval<SurfaceType>> surfaceIntervals,
+            IReadOnlyList<Interval<TrackType>> trackTypeIntervals)
         {
             return roadClassIntervals
                 .SelectMany(s => new[] { s.FromIndex, s.ToIndex })
@@ -34,9 +33,9 @@ namespace Routing.Application.Planning.Candidates.Builders
         private static List<Segment> CreateSegments(
             IReadOnlyList<Coordinate> geometry,
             List<int> boundaries,
-            IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals,
-            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
+            IReadOnlyList<Interval<RoadClassType>> roadClassIntervals,
+            IReadOnlyList<Interval<SurfaceType>> surfaceIntervals,
+            IReadOnlyList<Interval<TrackType>> trackTypeIntervals)
         {
             var segments = new List<Segment>(boundaries.Count - 1);
 
@@ -62,9 +61,9 @@ namespace Routing.Application.Planning.Candidates.Builders
             IReadOnlyList<Coordinate> geometry,
             int fromIndex,
             int toIndex,
-            IReadOnlyList<RoadClassInterval> roadClassIntervals,
-            IReadOnlyList<SurfaceInterval> surfaceIntervals,
-            IReadOnlyList<TrackTypeInterval> trackTypeIntervals)
+            IReadOnlyList<Interval<RoadClassType>> roadClassIntervals,
+            IReadOnlyList<Interval<SurfaceType>> surfaceIntervals,
+            IReadOnlyList<Interval<TrackType>> trackTypeIntervals)
         {
             var road = roadClassIntervals
                 .SingleOrDefault(r => r.FromIndex <= fromIndex && fromIndex < r.ToIndex)
@@ -91,9 +90,9 @@ namespace Routing.Application.Planning.Candidates.Builders
                 start: intervalGeometry[0],
                 end: intervalGeometry[^1],
                 geometry: intervalGeometry,
-                roadClassType: road.RoadClass,
-                surfaceType: surface.Surface,
-                trackType: track.TrackType
+                roadClassType: road.Value,
+                surfaceType: surface.Value,
+                trackType: track.Value
             );
         }
     }

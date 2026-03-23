@@ -1,6 +1,7 @@
 ﻿using NetTopologySuite.Features;
 using NetTopologySuite.IO;
 using Routing.Application.Abstractions;
+using Routing.Domain.Enums;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
@@ -47,13 +48,13 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var segments = SegmentBuilder.Build(
                 geometry,
-                route.RoadClassIntervals.EnsureFullCoverage(maxEdgeIndex),
-                route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex),
-                route.TrackTypeIntervals.EnsureFullCoverage(maxEdgeIndex));
+                route.RoadClassIntervals.EnsureFullCoverage(maxEdgeIndex, RoadClassType.UNKNOWN),
+                route.SurfaceIntervals.EnsureFullCoverage(maxEdgeIndex, SurfaceType.UNKNOWN),
+                route.TrackTypeIntervals.EnsureFullCoverage(maxEdgeIndex, TrackType.UNKNOWN));
 
             var barriers = BarrierBuilder.Build(route.BarrierIntervals, geometry);
 
-            var restrictedZones = _restrictedZoneBuilder.Build(route.RoadAccessInervals, geometry);
+            var restrictedZones = _restrictedZoneBuilder.Build(route.RoadAccessIntervals, geometry);
 
             return TripCandidate.Create(
                 segments,

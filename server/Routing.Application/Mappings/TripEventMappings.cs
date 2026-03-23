@@ -26,7 +26,7 @@ namespace Routing.Application.Mappings
                 tripEvents.AddRange(plan.RestrictedZones.Select(z => new IntervalEvent
                 {
                     Type = TripEventType.Restriction,
-                    SubType = z.RestrictionType.ToString(),
+                    SubType = z.Value.ToString(),
                     FromIndex = z.FromIndex,
                     ToIndex = z.ToIndex
                 }));
