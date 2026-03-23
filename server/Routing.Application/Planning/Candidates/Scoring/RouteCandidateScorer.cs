@@ -3,12 +3,17 @@ using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 using Routing.Domain.Enums;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
     public sealed class RouteCandidateScorer : ITripCandidateScorer<RouteIntent>
     {
         private const double MaxDetourRatio = 0.3;
+        private const double StandardDetourPenaltyRate = 50.0;
+        private const double ExcessiveDetourBasePenalty = 15.0; 
+        private const double ExcessiveDetourPenaltyRate = 200.0;
 
         public IReadOnlyList<ScoredTripCandidate> Score(IReadOnlyList<TripCandidate> candidates, RouteIntent intent, UserRoutingProfile profile, PlannerSettings settings)
         {
@@ -54,8 +59,8 @@ namespace Routing.Application.Planning.Candidates.Scoring
             var offroadScore = candidate.OffroadRatio * 100.0;
 
             var detourPenalty = detourRatio <= MaxDetourRatio
-                ? detourRatio * 50.0
-                : 15.0 + (detourRatio - MaxDetourRatio) * 200.0;
+                ? detourRatio * StandardDetourPenaltyRate
+                : ExcessiveDetourBasePenalty + (detourRatio - MaxDetourRatio) * ExcessiveDetourPenaltyRate;
 
             return offroadScore - detourPenalty;
         }
