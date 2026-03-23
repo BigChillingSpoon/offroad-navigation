@@ -20,16 +20,18 @@ namespace Routing.Application.Planning.Candidates.Models
         public double OffroadRatio => TotalDistanceMeters > 0 ? OffroadDistanceMeters / TotalDistanceMeters : 0;
         public double ElevationGainMeters { get; }
         public double ElevationLossMeters { get; }
+        public EncodedPolyline Polyline { get; }
         public IReadOnlyList<Segment> Segments { get; }
         public IReadOnlyList<RoadBarrier> Barriers { get; }
         public IReadOnlyList<RestrictedZone> RestrictedZones { get; }
         public IReadOnlyDictionary<string, object>? Metadata { get; init; }
 
-        private TripCandidate(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, IReadOnlyList<RestrictedZone> restrictedZones, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
+        private TripCandidate(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, IReadOnlyList<RestrictedZone> restrictedZones, EncodedPolyline polyline, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
         {
             Segments = segments;
             Barriers = barriers;
             RestrictedZones = restrictedZones;
+            Polyline = polyline;
             TotalDistanceMeters = totalDistance;
             Duration = duration;
             OffroadDistanceMeters = offroadDistance;
@@ -37,11 +39,11 @@ namespace Routing.Application.Planning.Candidates.Models
             ElevationLossMeters = elevationLoss;
         }
 
-        public static TripCandidate Create(IReadOnlyList<Segment> segments,IReadOnlyList<RoadBarrier> barriers,IReadOnlyList<RestrictedZone> restrictedZones , double totalDistance, TimeSpan duration, double elevationGain, double elevationLoss)
+        public static TripCandidate Create(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, IReadOnlyList<RestrictedZone> restrictedZones, EncodedPolyline polyline, double totalDistance, TimeSpan duration, double elevationGain, double elevationLoss)
         {
             var offroadDistance = segments.Where(s => s.IsOffroad).Sum(s => s.DistanceMeters);
             Validate(totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
-            return new TripCandidate(segments, barriers, restrictedZones, totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
+            return new TripCandidate(segments, barriers, restrictedZones, polyline, totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
         }
         private static void Validate(double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
         {

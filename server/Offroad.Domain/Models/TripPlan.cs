@@ -9,6 +9,7 @@ namespace Routing.Domain.Models
         public TimeSpan Duration { get; }
         public double ElevationGainMeters { get; }
         public double ElevationLossMeters { get; }
+        public EncodedPolyline Polyline { get; }
         public IReadOnlyList<Segment> Segments { get; }
         public IReadOnlyList<RoadBarrier> Barriers { get; }
         public IReadOnlyList<RestrictedZone> RestrictedZones { get; }
@@ -16,11 +17,12 @@ namespace Routing.Domain.Models
         //for EFCore
         private TripPlan() { }
 
-        private TripPlan(double distance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
+        private TripPlan(double distance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, EncodedPolyline polyline = null, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
         {
             TotalDistanceMeters = distance;
             Duration = duration;
             OffroadDistanceMeters = offroadDistance;
+            Polyline = polyline ?? new EncodedPolyline();
             Segments = segments ?? new List<Segment>();
             ElevationGainMeters = elevationGain;
             ElevationLossMeters = elevationLoss;
@@ -28,10 +30,10 @@ namespace Routing.Domain.Models
             RestrictedZones = restrictedZones ?? new List<RestrictedZone>();
         }
 
-        public static TripPlan Create(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
+        public static TripPlan Create(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss, EncodedPolyline polyline = null, IReadOnlyList<Segment> segments = null, IReadOnlyList<RoadBarrier> barriers = null, IReadOnlyList<RestrictedZone> restrictedZones = null)
         {
             Validate(totalDistance, offroadDistance, duration, elevationGain, elevationLoss);
-            return new TripPlan(totalDistance, offroadDistance, duration, elevationGain, elevationLoss, segments, barriers, restrictedZones);
+            return new TripPlan(totalDistance, offroadDistance, duration, elevationGain, elevationLoss, polyline, segments, barriers, restrictedZones);
         }
 
         private static void Validate(double totalDistance, double offroadDistance, TimeSpan duration, double elevationGain, double elevationLoss)

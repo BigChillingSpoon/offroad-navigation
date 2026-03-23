@@ -1,4 +1,4 @@
-﻿using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Candidates.Models;
 using Routing.Domain.Models;
 
 namespace Routing.Application.Mappings
@@ -7,7 +7,16 @@ namespace Routing.Application.Mappings
     {
         public static TripPlan ToTripPlan(this TripCandidate candidate)
         {
-            return TripPlan.Create(candidate.TotalDistanceMeters, candidate.OffroadDistanceMeters, candidate.Duration, candidate.ElevationGainMeters, candidate.ElevationLossMeters, candidate.Segments, candidate.Barriers, candidate.RestrictedZones);
+            return TripPlan.Create(
+                candidate.TotalDistanceMeters,
+                candidate.OffroadDistanceMeters,
+                candidate.Duration,
+                candidate.ElevationGainMeters,
+                candidate.ElevationLossMeters,
+                candidate.Polyline,
+                candidate.Segments,
+                candidate.Barriers,
+                candidate.RestrictedZones);
         }
     }
 }

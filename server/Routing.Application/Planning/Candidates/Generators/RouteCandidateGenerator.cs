@@ -59,6 +59,7 @@ namespace Routing.Application.Planning.Candidates.Generators
                 segments,
                 barriers,
                 restrictedZones,
+                route.Polyline,
                 route.Distance,
                 route.Duration,
                 route.Ascend,
