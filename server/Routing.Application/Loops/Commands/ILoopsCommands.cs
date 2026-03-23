@@ -6,8 +6,8 @@ namespace Routing.Application.Loops.Commands
 {
     public interface ILoopsCommands
     {
-        Task<Result<IReadOnlyList<TripResult>>> FindAsyncCommand(FindLoopsRequest request, CancellationToken ct);
-        Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct);
-        Task<Result<bool>> DeleteAsyncCommand(Guid id, CancellationToken ct);
+        Task<Result<IReadOnlyList<TripResult>>> FindAsync(FindLoopsRequest request, CancellationToken ct);
+        Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct);
+        Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct);
     }
 }

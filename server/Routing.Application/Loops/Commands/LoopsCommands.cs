@@ -25,7 +25,7 @@ namespace Routing.Application.Loops.Commands
             _logger = logger;
         }
 
-        public async Task<Result<Guid>> SaveAsyncCommand(SaveLoopRequest request, CancellationToken ct)
+        public async Task<Result<Guid>> SaveAsync(SaveLoopRequest request, CancellationToken ct)
         {
             var loopPlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds(request.Duration.TotalSeconds), request.ElevationGainMeters, request.ElevationLossMeters);
             var loop = Trip.Create(request.Name, TripType.Loop, loopPlan);
@@ -35,7 +35,7 @@ namespace Routing.Application.Loops.Commands
             return loop.Id;
         }
 
-        public async Task<Result<bool>> DeleteAsyncCommand(Guid id, CancellationToken ct)
+        public async Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
@@ -47,7 +47,7 @@ namespace Routing.Application.Loops.Commands
             return true;
         }
 
-        public async Task<Result<IReadOnlyList<TripResult>>> FindAsyncCommand(FindLoopsRequest request, CancellationToken ct)
+        public async Task<Result<IReadOnlyList<TripResult>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
         {
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();

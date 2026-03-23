@@ -25,7 +25,7 @@ namespace Routing.Application.Routes.Commands
             _logger = logger;
         }
 
-        public async Task<Result<Guid>> SaveAsyncCommand(SaveRouteRequest request, CancellationToken ct)
+        public async Task<Result<Guid>> SaveAsync(SaveRouteRequest request, CancellationToken ct)
         {
             var routePlan = TripPlan.Create(request.TotalDistanceMeters, request.OffroadDistanceMeters,TimeSpan.FromSeconds( request.Duration.TotalSeconds), request.ElevationGainMeters, request.ElevationLossMeters);
             var route = Trip.Create(request.Name, TripType.Route, routePlan);
@@ -35,7 +35,7 @@ namespace Routing.Application.Routes.Commands
             return route.Id;
         }
 
-        public async Task<Result<bool>> DeleteAsyncCommand(Guid id, CancellationToken ct)
+        public async Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct)
         {
             var route = await _repository.GetByIdAsync(id, ct);
 
@@ -47,7 +47,7 @@ namespace Routing.Application.Routes.Commands
             return true;
         }
 
-        public async Task<Result<TripResult>> PlanAsyncCommand(PlanRouteRequest request, CancellationToken ct)
+        public async Task<Result<TripResult>> PlanAsync(PlanRouteRequest request, CancellationToken ct)
         {
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();

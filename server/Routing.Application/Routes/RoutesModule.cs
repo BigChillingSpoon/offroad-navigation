@@ -25,12 +25,12 @@ namespace Routing.Application.Routes
             => _queries.GetAllAsync(ct);
 
         public Task<Result<Guid>> SaveAsync(SaveRouteRequest request, CancellationToken ct = default)
-            => _commands.SaveAsyncCommand(request, ct);
+            => _commands.SaveAsync(request, ct);
 
         public Task<Result<bool>> DeleteAsync(Guid id, CancellationToken ct = default)
-            => _commands.DeleteAsyncCommand(id, ct);
+            => _commands.DeleteAsync(id, ct);
 
         public Task<Result<TripResult>> PlanAsync(PlanRouteRequest request, CancellationToken ct = default)
-            => _commands.PlanAsyncCommand(request, ct);
+            => _commands.PlanAsync(request, ct);
     }
 }
