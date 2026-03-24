@@ -80,16 +80,10 @@ namespace Routing.Application.Planning.Candidates.Builders
                 ?? throw new ContractViolationException(
                     $"TrackTypeIntervals must fully cover geometry. No interval found for index {fromIndex}.");
 
-            var intervalGeometry = new List<Coordinate>((toIndex - fromIndex) + 1);
-            for (int i = fromIndex; i <= toIndex; i++)
-            {
-                intervalGeometry.Add(geometry[i]);
-            }
-
             return Segment.Create(
-                start: intervalGeometry[0],
-                end: intervalGeometry[^1],
-                geometry: intervalGeometry,
+                geometry,
+                fromIndex,
+                toIndex,
                 roadClassType: road.Value,
                 surfaceType: surface.Value,
                 trackType: track.Value

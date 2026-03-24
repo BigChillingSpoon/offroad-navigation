@@ -28,6 +28,24 @@ namespace Routing.Domain.Utilities
         }
 
         /// <summary>
+        /// Calculates the distance of a sub-path within a geometry, defined by an index range [fromIndex, toIndex].
+        /// </summary>
+        public static double CalculateRangeDistance(IReadOnlyList<Coordinate> coordinates, int fromIndex, int toIndex)
+        {
+            if (coordinates == null || fromIndex >= toIndex)
+                return 0;
+
+            double totalDistance = 0;
+
+            for (int i = fromIndex; i < toIndex; i++)
+            {
+                totalDistance += CalculateDistance(coordinates[i], coordinates[i + 1]);
+            }
+
+            return totalDistance;
+        }
+
+        /// <summary>
         /// Calculates the great-circle distance between two coordinates using the Haversine formula.
         /// Haversine is not perfectly precise but for our purposes its okay, could be changed in the future
         /// </summary>

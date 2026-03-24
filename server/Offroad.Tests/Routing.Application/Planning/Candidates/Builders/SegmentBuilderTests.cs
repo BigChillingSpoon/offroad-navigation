@@ -234,10 +234,16 @@ public class SegmentBuilderTests
 
         // Assert
         Assert.Equal(2, result.Count);
-        Assert.Equal(3, result[0].Geometry.Count);
+
+        // First segment [0-2]
+        Assert.Equal(0, result[0].FromIndex);
+        Assert.Equal(2, result[0].ToIndex);
         Assert.Equal(geometry[0], result[0].Start);
         Assert.Equal(geometry[2], result[0].End);
-        Assert.Equal(3, result[1].Geometry.Count);
+
+        // Second segment [2-4]
+        Assert.Equal(2, result[1].FromIndex);
+        Assert.Equal(4, result[1].ToIndex);
         Assert.Equal(geometry[2], result[1].Start);
         Assert.Equal(geometry[4], result[1].End);
     }
@@ -256,8 +262,10 @@ public class SegmentBuilderTests
 
         // Assert
         var segment = Assert.Single(result);
-        Assert.Equal(segment.Geometry[0], segment.Start);
-        Assert.Equal(segment.Geometry[^1], segment.End);
+        Assert.Equal(0, segment.FromIndex);
+        Assert.Equal(9, segment.ToIndex);
+        Assert.Equal(geometry[0], segment.Start);
+        Assert.Equal(geometry[9], segment.End);
     }
 
     #endregion

@@ -141,10 +141,12 @@ public class LoopCandidateScorerTests
 
     private static Segment CreateOffroadSegment()
     {
-        var start = new Coordinate(50.0, 14.0);
-        var end = new Coordinate(50.001, 14.0);
-        var geometry = new List<Coordinate> { start, end };
-        return Segment.Create(start, end, geometry, RoadClassType.TRACK, TrackType.UNKNOWN, SurfaceType.DIRT);
+        var geometry = new List<Coordinate>
+        {
+            new(50.0, 14.0),
+            new(50.001, 14.0)
+        };
+        return Segment.Create(geometry, 0, 1, RoadClassType.TRACK, SurfaceType.DIRT, TrackType.UNKNOWN);
     }
 
     #endregion

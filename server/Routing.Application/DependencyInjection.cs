@@ -9,7 +9,6 @@ using Routing.Application.Contracts;
 using Routing.Application.Routes;
 using Routing.Application.Routes.Queries;
 using Routing.Application.Loops.Queries;
-using Routing.Application.Planning.Scoring;
 using Routing.Application.Loops;
 using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Candidates.Scoring;
@@ -39,7 +38,6 @@ namespace Routing.Domain
             services.AddScoped<ITileSelector, TileSelector>();
             services.AddScoped<ILoopFinder, LoopFinder>();
             services.AddScoped<IRouteFinder, RouteFinder>();
-            services.AddScoped<ISegmentScorer, SegmentScorer>();
             services.AddScoped<ITripCandidateGeneratorFactory, TripCandidateGeneratorFactory>();
             services.AddScoped<ICandidateGenerator<RouteIntent>, RouteCandidateGenerator>();
             services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();

@@ -1,4 +1,4 @@
-﻿using Routing.Domain.Enums;
+using Routing.Domain.Enums;
 using Routing.Domain.Exceptions;
 using Routing.Domain.Utilities;
 
@@ -6,9 +6,10 @@ namespace Routing.Domain.ValueObjects
 {
     public class Segment
     {
+        public int FromIndex { get; }
+        public int ToIndex { get; }
         public Coordinate Start { get; }
         public Coordinate End { get; }
-        public IReadOnlyList<Coordinate> Geometry { get; }
         public RoadClassType RoadClass { get; }
         public SurfaceType Surface { get; }
         public TrackType TrackType { get; }
@@ -70,30 +71,28 @@ namespace Routing.Domain.ValueObjects
         //for ef core in the future
         private Segment() { }
 
-        private Segment(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, SurfaceType surfaceType, TrackType trackType, double distanceMeters)
+        private Segment(int fromIndex, int toIndex, Coordinate start, Coordinate end, RoadClassType roadClassType, SurfaceType surfaceType, TrackType trackType, double distanceMeters)
         {
+            FromIndex = fromIndex;
+            ToIndex = toIndex;
             Start = start;
             End = end;
-            Geometry = geometry;
             RoadClass = roadClassType;
             Surface = surfaceType;
             TrackType = trackType;
             DistanceMeters = distanceMeters;
         }
 
-        public static Segment Create(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry, RoadClassType roadClassType, TrackType trackType, SurfaceType surfaceType)
+        public static Segment Create(IReadOnlyList<Coordinate> fullGeometry, int fromIndex, int toIndex, RoadClassType roadClassType, SurfaceType surfaceType, TrackType trackType)
         {
-            Validate(start, end, geometry);
-            var distanceMeters = GeoCalculator.CalculatePathDistance(geometry);
-            return new Segment(start, end, geometry, roadClassType, surfaceType, trackType, distanceMeters);
-        }
+            if (fullGeometry is null || fullGeometry.Count == 0)
+                throw new DomainException("Geometry cannot be null or empty");
+            if (fromIndex < 0 || toIndex < fromIndex || toIndex >= fullGeometry.Count)
+                throw new DomainException($"Invalid segment indices: [{fromIndex}, {toIndex}] for geometry of size {fullGeometry.Count}");
 
-        private static void Validate(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> geometry)
-        {
-            if (start is null) throw new DomainException("Segment start cannot be null");
-            if (end is null) throw new DomainException("Segment end cannot be null");
-            if (geometry.Count == 0)
-                throw new DomainException("Segment geometry cannot be empty");
+            var distanceMeters = GeoCalculator.CalculateRangeDistance(fullGeometry, fromIndex, toIndex);
+
+            return new Segment(fromIndex, toIndex, fullGeometry[fromIndex], fullGeometry[toIndex], roadClassType, surfaceType, trackType, distanceMeters);
         }
     }
 }

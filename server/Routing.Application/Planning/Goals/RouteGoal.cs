@@ -1,6 +1,5 @@
-﻿using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using System.Linq;
 
 namespace Routing.Application.Planning.Goals
 {
@@ -26,7 +25,7 @@ namespace Routing.Application.Planning.Goals
                 var previous = candidate.Segments[i - 1];
                 var current = candidate.Segments[i];
 
-                if (previous.End != current.Start)
+                if (previous.ToIndex != current.FromIndex)
                     return false;
             }
 
