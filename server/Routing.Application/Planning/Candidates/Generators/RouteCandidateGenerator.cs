@@ -11,6 +11,7 @@ using Routing.Application.Planning.Encoding;
 using Routing.Application.Planning.Candidates.Builders;
 using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
+using Routing.Domain.Utilities;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -56,6 +57,8 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var restrictedZones = _restrictedZoneBuilder.Build(route.RoadAccessIntervals, geometry);
 
+            var maxGradient = GeoCalculator.CalculateMaxGradientPercentage(geometry);
+
             return TripCandidate.Create(
                 segments,
                 barriers,
@@ -64,7 +67,8 @@ namespace Routing.Application.Planning.Candidates.Generators
                 route.Distance,
                 route.Duration,
                 route.Ascend,
-                route.Descend);
+                route.Descend,
+                maxGradient);
         }
 
         //translate technical exception to domain specific one, so we can later on decide how to handle it based on category

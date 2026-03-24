@@ -46,6 +46,49 @@ namespace Routing.Domain.Utilities
         }
 
         /// <summary>
+        /// Calculates the steepest gradient (%) along a path using a sliding window approach.
+        /// Accumulates 2D distance from a start point until it exceeds the minimum chunk distance,
+        /// then calculates gradient = |elevationDiff / horizontalDist| * 100.
+        /// This avoids GPS jitter on short point-to-point distances.
+        /// </summary>
+        public static double CalculateMaxGradientPercentage(IReadOnlyList<Coordinate> coordinates, double minChunkDistanceMeters = 50.0)
+        {
+            if (coordinates == null || coordinates.Count < 2)
+                return 0;
+
+            double maxGradient = 0;
+
+            for (int startIdx = 0; startIdx < coordinates.Count - 1; startIdx++)
+            {
+                if (!coordinates[startIdx].Elevation.HasValue)
+                    continue;
+
+                double accumulatedDistance = 0;
+
+                for (int endIdx = startIdx + 1; endIdx < coordinates.Count; endIdx++)
+                {
+                    accumulatedDistance += CalculateDistance(coordinates[endIdx - 1], coordinates[endIdx]);
+
+                    if (accumulatedDistance < minChunkDistanceMeters)
+                        continue;
+
+                    if (!coordinates[endIdx].Elevation.HasValue)
+                        break;
+
+                    var elevationDiff = coordinates[endIdx].Elevation!.Value - coordinates[startIdx].Elevation!.Value;
+                    var gradient = Math.Abs(elevationDiff / accumulatedDistance) * 100.0;
+
+                    if (gradient > maxGradient)
+                        maxGradient = gradient;
+
+                    break;
+                }
+            }
+
+            return maxGradient;
+        }
+
+        /// <summary>
         /// Calculates the great-circle distance between two coordinates using the Haversine formula.
         /// Haversine is not perfectly precise but for our purposes its okay, could be changed in the future
         /// </summary>
