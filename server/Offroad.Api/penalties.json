@@ -1,0 +1,60 @@
+{
+  "Scoring": {
+    "Route": {
+      "Detour": {
+        "MaxRatio": 0.3,
+        "StandardPenaltyRate": 50.0,
+        "ExcessiveBasePenalty": 15.0,
+        "ExcessiveRate": 200.0
+      },
+      "Restrictions": {
+        "NationalPark": 500.0,
+        "NatureReserve": 400.0,
+        "NoAccess": 300.0,
+        "Private": 200.0,
+        "Forestry": 50.0,
+        "Agricultural": 50.0,
+        "Unknown": 30.0,
+        "Delivery": 20.0,
+        "Customers": 20.0,
+        "Destination": 10.0
+      },
+      "Barriers": {
+        "Gate": 150.0,
+        "LiftGate": 100.0,
+        "SwingGate": 100.0,
+        "Chain": 80.0,
+        "Block": 80.0,
+        "Bollard": 30.0
+      }
+    },
+    "Loop": {
+      "Detour": {
+        "MaxRatio": 0.3,
+        "StandardPenaltyRate": 50.0,
+        "ExcessiveBasePenalty": 15.0,
+        "ExcessiveRate": 200.0
+      },
+      "Restrictions": {
+        "NationalPark": 600.0,
+        "NatureReserve": 500.0,
+        "NoAccess": 400.0,
+        "Private": 250.0,
+        "Forestry": 80.0,
+        "Agricultural": 80.0,
+        "Unknown": 50.0,
+        "Delivery": 30.0,
+        "Customers": 30.0,
+        "Destination": 15.0
+      },
+      "Barriers": {
+        "Gate": 200.0,
+        "LiftGate": 150.0,
+        "SwingGate": 150.0,
+        "Chain": 100.0,
+        "Block": 100.0,
+        "Bollard": 50.0
+      }
+    }
+  }
+}

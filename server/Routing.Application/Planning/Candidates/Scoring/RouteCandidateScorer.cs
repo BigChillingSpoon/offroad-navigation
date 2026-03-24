@@ -1,43 +1,32 @@
+using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
-using Routing.Application.Planning.Profiles;
 using Routing.Domain.Enums;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
-    public sealed class RouteCandidateScorer : ITripCandidateScorer<RouteIntent>
+    public sealed class RouteCandidateScorer : BaseTripCandidateScorer<RouteIntent>
     {
-        private const double MaxDetourRatio = 0.3;
-        private const double StandardDetourPenaltyRate = 50.0;
-        private const double ExcessiveDetourBasePenalty = 15.0; 
-        private const double ExcessiveDetourPenaltyRate = 200.0;
+        private readonly IOptionsMonitor<ScoringProfiles> _options;
 
-        public IReadOnlyList<ScoredTripCandidate> Score(IReadOnlyList<TripCandidate> candidates, RouteIntent intent, UserRoutingProfile profile, PlannerSettings settings)
+        public RouteCandidateScorer(IOptionsMonitor<ScoringProfiles> options)
         {
-            if (candidates.Count == 0)
-                return [];
+            _options = options;
+        }
 
-            var shortestDistance = candidates.Min(c => c.TotalDistanceMeters);
+        protected override PenaltyWeights Weights => _options.CurrentValue.Route;
 
-            return candidates.Select(candidate =>
+        protected override double ScoreCandidate(TripCandidate candidate, RouteIntent intent, IReadOnlyList<TripCandidate> allCandidates, PenaltyWeights weights)
+        {
+            var shortestDistance = allCandidates.Min(c => c.TotalDistanceMeters);
+
+            return intent.Balance switch
             {
-                var score = intent.Balance switch
-                {
-                    RouteBalance.Shortest => ScoreShortest(candidate, shortestDistance),
-                    RouteBalance.MaxOffroad => ScoreMaxOffroad(candidate),
-                    RouteBalance.Balanced => ScoreBalanced(candidate, shortestDistance),
-                    _ => 0.0
-                };
-
-                return new ScoredTripCandidate
-                {
-                    Candidate = candidate,
-                    Score = score
-                };
-            }).ToList();
+                RouteBalance.Shortest => ScoreShortest(candidate, shortestDistance),
+                RouteBalance.MaxOffroad => ScoreMaxOffroad(candidate),
+                RouteBalance.Balanced => ScoreBalanced(candidate, shortestDistance, weights),
+                _ => 0.0
+            };
         }
 
         private static double ScoreShortest(TripCandidate candidate, double shortestDistance)
@@ -51,16 +40,16 @@ namespace Routing.Application.Planning.Candidates.Scoring
             return candidate.OffroadRatio * 100.0;
         }
 
-        private static double ScoreBalanced(TripCandidate candidate, double shortestDistance)
+        private static double ScoreBalanced(TripCandidate candidate, double shortestDistance, PenaltyWeights weights)
         {
             if (shortestDistance <= 0) return 0;
 
             var detourRatio = (candidate.TotalDistanceMeters - shortestDistance) / shortestDistance;
             var offroadScore = candidate.OffroadRatio * 100.0;
 
-            var detourPenalty = detourRatio <= MaxDetourRatio
-                ? detourRatio * StandardDetourPenaltyRate
-                : ExcessiveDetourBasePenalty + (detourRatio - MaxDetourRatio) * ExcessiveDetourPenaltyRate;
+            var detourPenalty = detourRatio <= weights.Detour.MaxRatio
+                ? detourRatio * weights.Detour.StandardPenaltyRate
+                : weights.Detour.ExcessiveBasePenalty + (detourRatio - weights.Detour.MaxRatio) * weights.Detour.ExcessiveRate;
 
             return offroadScore - detourPenalty;
         }

@@ -1,31 +1,26 @@
-﻿using Routing.Application.Planning.Candidates.Models;
+using Microsoft.Extensions.Options;
+using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
-using Routing.Application.Planning.Profiles;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
-    public sealed class LoopCandidateScorer : ITripCandidateScorer<LoopIntent>
+    public sealed class LoopCandidateScorer : BaseTripCandidateScorer<LoopIntent>
     {
-        public IReadOnlyList<ScoredTripCandidate> Score(IReadOnlyList<TripCandidate> candidates, LoopIntent intent, UserRoutingProfile profile, PlannerSettings settings) 
+        private readonly IOptionsMonitor<ScoringProfiles> _options;
+
+        public LoopCandidateScorer(IOptionsMonitor<ScoringProfiles> options)
         {
-            return candidates.Select(candidate =>
-            {
-                
+            _options = options;
+        }
 
-                //preference scoring (placeholder):
-                // - prefer offroad ratio
-                // - penalize extreme elevation gain
-                var score =
-                    (candidate.OffroadRatio * 100.0) -
-                    (candidate.ElevationGainMeters * 0.01);
+        protected override PenaltyWeights Weights => _options.CurrentValue.Loop;
 
-                return new ScoredTripCandidate
-                {
-                    Candidate = candidate,
-                    Score = score
-                };
-            }).ToList();
+        protected override double ScoreCandidate(TripCandidate candidate, LoopIntent intent, IReadOnlyList<TripCandidate> allCandidates, PenaltyWeights weights)
+        {
+            var offroadScore = candidate.OffroadRatio * 100.0;
+            var elevationPenalty = candidate.ElevationGainMeters * 0.01;
+
+            return offroadScore - elevationPenalty;
         }
     }
 }

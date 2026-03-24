@@ -39,8 +39,11 @@ namespace Offroad.Api
             builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
             builder.Services.AddProblemDetails();
 
+            // Scoring Configuration
+            builder.Configuration.AddJsonFile("penalties.json", optional: false, reloadOnChange: true);
+
             // Project Dependencies
-            builder.Services.AddRoutingApplication();
+            builder.Services.AddRoutingApplication(builder.Configuration);
             builder.Services.AddRoutingInfrastructure(builder.Configuration);
         }
 

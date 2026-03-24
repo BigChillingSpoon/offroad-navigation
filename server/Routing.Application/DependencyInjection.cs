@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Routing.Application.Loops.Commands;
 using Routing.Application.Planning.Finders;
 using Routing.Application.Planning.Planner;
@@ -21,7 +22,7 @@ namespace Routing.Domain
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddRoutingApplication(this IServiceCollection services)
+        public static IServiceCollection AddRoutingApplication(this IServiceCollection services, IConfiguration configuration)
         {
             // MODULES
             services.AddScoped<IRoutesModule, RoutesModule>();
@@ -32,7 +33,7 @@ namespace Routing.Domain
             services.AddScoped<IRoutesCommands, RoutesCommands>();
             services.AddScoped<IRoutesQueries, RoutesQueries>();
             services.AddScoped<ILoopsQueries, LoopsQueries>();
-            
+
             // PLANNING
             services.AddScoped<ITripPlanner, TripPlanner>();
             services.AddScoped<ITileSelector, TileSelector>();
@@ -45,11 +46,14 @@ namespace Routing.Domain
             services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
             services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
             services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
-            //services.AddScoped<ICandidateGenerator<LoopIntent>, Loop>
 
-            var geoJsonPath = "../../routing/graphhopper/data/restricted_areas/cz_national_parks.geojson.json"; 
+            // GEODATA
+            var geoJsonPath = "../../routing/graphhopper/data/restricted_areas/cz_national_parks.geojson.json";
             var parksCollection = new GeoJsonReader().Read<FeatureCollection>(File.ReadAllText(geoJsonPath));
             services.AddSingleton(parksCollection);
+
+            // OPTIONS
+            services.Configure<ScoringProfiles>(configuration.GetSection(ScoringProfiles.SectionName));
 
             return services;
         }
