@@ -1,3 +1,5 @@
+using System.Reflection;
+using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Routing.Application.Loops.Commands;
@@ -52,6 +54,9 @@ namespace Routing.Domain
 
             // OPTIONS
             services.Configure<ScoringProfiles>(configuration.GetSection(ScoringProfiles.SectionName));
+
+            // VALIDATION
+            services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
             return services;
         }

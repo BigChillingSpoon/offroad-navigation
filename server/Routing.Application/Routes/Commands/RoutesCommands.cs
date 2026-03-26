@@ -1,3 +1,4 @@
+using FluentValidation;
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Contracts.Responses;
@@ -16,12 +17,14 @@ namespace Routing.Application.Routes.Commands
     {
         private readonly ITripRepository _repository;
         private readonly IRouteFinder _routeFinder;
+        private readonly IValidator<PlanRouteRequest> _planValidator;
         private readonly ILogger<RoutesCommands> _logger;
 
-        public RoutesCommands(ITripRepository repository, IRouteFinder routeFinder, ILogger<RoutesCommands> logger)
+        public RoutesCommands(ITripRepository repository, IRouteFinder routeFinder, IValidator<PlanRouteRequest> planValidator, ILogger<RoutesCommands> logger)
         {
             _repository = repository;
             _routeFinder = routeFinder;
+            _planValidator = planValidator;
             _logger = logger;
         }
 
@@ -49,6 +52,13 @@ namespace Routing.Application.Routes.Commands
 
         public async Task<Result<TripResult>> PlanAsync(PlanRouteRequest request, CancellationToken ct)
         {
+            var validationResult = await _planValidator.ValidateAsync(request, ct);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return Error.Validation(errors);
+            }
+
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();
 

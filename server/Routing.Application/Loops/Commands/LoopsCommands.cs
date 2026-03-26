@@ -1,3 +1,4 @@
+using FluentValidation;
 using Offroad.Core;
 using Routing.Application.Contracts.Models;
 using Routing.Application.Contracts.Responses;
@@ -16,12 +17,14 @@ namespace Routing.Application.Loops.Commands
     {
         private readonly ITripRepository _repository;
         private readonly ILoopFinder _loopFinder;
+        private readonly IValidator<FindLoopsRequest> _findValidator;
         private readonly ILogger<LoopsCommands> _logger;
 
-        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder, ILogger<LoopsCommands> logger)
+        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder, IValidator<FindLoopsRequest> findValidator, ILogger<LoopsCommands> logger)
         {
             _repository = repository;
             _loopFinder = loopFinder;
+            _findValidator = findValidator;
             _logger = logger;
         }
 
@@ -49,6 +52,13 @@ namespace Routing.Application.Loops.Commands
 
         public async Task<Result<IReadOnlyList<TripResult>>> FindAsync(FindLoopsRequest request, CancellationToken ct)
         {
+            var validationResult = await _findValidator.ValidateAsync(request, ct);
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join("; ", validationResult.Errors.Select(e => e.ErrorMessage));
+                return Error.Validation(errors);
+            }
+
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
             try

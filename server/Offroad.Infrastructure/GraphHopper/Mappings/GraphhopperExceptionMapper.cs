@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Routing.Application.Planning.Exceptions;
 
 namespace Routing.Infrastructure.GraphHopper.Mappings
@@ -8,6 +8,13 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
         public static void ThrowExceptionBasedOnStatusCode(HttpStatusCode statusCode, string responseBody)
         {
             var details = $"StatusCode: {(int)statusCode}, Response: {responseBody}";
+
+            if (statusCode == HttpStatusCode.BadRequest && IsOutOfBoundsError(responseBody))
+            {
+                throw new RoutingProviderException(
+                    RoutingProviderErrorCategory.OutOfBounds,
+                    "The requested coordinates are outside the currently loaded map area.");
+            }
 
             switch (statusCode)
             {
@@ -24,6 +31,12 @@ namespace Routing.Infrastructure.GraphHopper.Mappings
                 default:
                     throw new RoutingProviderException(RoutingProviderErrorCategory.HttpError, $"Routing service failed. {details}");
             }
+        }
+
+        private static bool IsOutOfBoundsError(string responseBody)
+        {
+            return !string.IsNullOrEmpty(responseBody)
+                && responseBody.Contains("out of bounds", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

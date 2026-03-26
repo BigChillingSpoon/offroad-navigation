@@ -20,6 +20,9 @@ namespace Routing.Application.Mappings
 
                 RoutingProviderErrorCategory.Unavailable =>
                     Error.ExternalServiceFailure("Routing provider is unable to be reached."),
+
+                RoutingProviderErrorCategory.OutOfBounds =>
+                    Error.Validation("The requested coordinates are outside the currently loaded map area."),
                 _ =>
                     Error.ExternalServiceFailure("An unexpected routing error occurred.")
             };
