@@ -1,4 +1,4 @@
-﻿using Routing.Application.Abstractions;
+using Routing.Application.Abstractions;
 using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Candidates.Models;
@@ -7,13 +7,19 @@ using Routing.Infrastructure.GraphHopper.Mappings;
 using Routing.Infrastructure.GraphHopper.DTOs;
 using Routing.Infrastructure.GraphHopper.Builders;
 using Routing.Application.Planning.Intents;
+using Routing.Domain.Utilities;
 using System.Net.Http.Json;
-
 
 namespace Routing.Infrastructure.GraphHopper
 {
     public sealed class GraphHopperService : IRoutingProvider
     {
+        public static readonly HttpRequestOptionsKey<TimeSpan> DynamicTimeoutKey = new("GraphHopperDynamicTimeout");
+
+        private const double BaseTimeoutSeconds = 4.0;
+        private const double SecondsPerTenKm = 1.0;
+        private const double MaxTimeoutSeconds = 60.0;
+
         private readonly HttpClient _httpClient;
         private readonly GraphHopperOptions _graphHopperOptions;
         private readonly JsonSerializerOptions _jsonOptions;
@@ -50,20 +56,28 @@ namespace Routing.Infrastructure.GraphHopper
                 ChDisable = _graphHopperOptions.ChDisable
             };
 
-            var response = await ExecuteRouteRequestAsync(requestPayload, cancellationToken);
+            var dynamicTimeout = CalculateDynamicTimeout(intent);
+            var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
 
             if (response?.Paths is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
-            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();//could be empty 
+
+            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
         }
 
-        private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, CancellationToken cancellationToken)
+        private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
         {
             var url = BuildUrl();
-            //todo create retry logic
+
             try
             {
-                using var response = await _httpClient.PostAsJsonAsync(url, requestPayload, _jsonOptions, cancellationToken);
+                using var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = JsonContent.Create(requestPayload, options: _jsonOptions)
+                };
+                request.Options.Set(DynamicTimeoutKey, dynamicTimeout);
+
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
 
                 if (!response.IsSuccessStatusCode)
                 {
@@ -81,6 +95,17 @@ namespace Routing.Infrastructure.GraphHopper
             {
                 throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "GraphHopper is unreachable.", ex);
             }
+        }
+
+        private static TimeSpan CalculateDynamicTimeout(RouteIntent intent)
+        {
+            var straightLineMeters = GeoCalculator.CalculateDistance(intent.Start, intent.End);
+            var straightLineKm = straightLineMeters / 1000.0;
+
+            var timeoutSeconds = BaseTimeoutSeconds + (straightLineKm / 10.0) * SecondsPerTenKm;
+            timeoutSeconds = Math.Min(timeoutSeconds, MaxTimeoutSeconds);
+
+            return TimeSpan.FromSeconds(timeoutSeconds);
         }
 
         private string BuildUrl()
