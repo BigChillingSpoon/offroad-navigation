@@ -44,7 +44,7 @@ namespace Routing.Infrastructure.GraphHopper.Builders
             {
                 customModel.Priority.Add(new PriorityStatement
                 {
-                    IfCondition = "custom_barrier == true",
+                    IfCondition = "custom_barrier > 1", // 1 = none in GH 
                     MultiplyBy = 0.0
                 });
             }
