@@ -48,10 +48,16 @@ namespace Routing.Domain
             services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
 
             // GEODATA
-            var geoJsonPath = "../../routing/graphhopper/data/restricted_areas/cz_national_parks.geojson.json";
-            var parksCollection = new GeoJsonReader().Read<FeatureCollection>(File.ReadAllText(geoJsonPath));
-            services.AddSingleton(parksCollection);
+            services.AddSingleton<FeatureCollection>(sp =>
+            {
+                var config = sp.GetRequiredService<IConfiguration>();
+                var path = config["Routing:ParksGeoJsonPath"]
+                    ?? throw new InvalidOperationException("Configuration 'Routing:ParksGeoJsonPath' is missing.");
 
+                var fileContent = File.ReadAllText(path);
+                return new GeoJsonReader().Read<FeatureCollection>(fileContent);
+            });
+            
             // OPTIONS
             services.Configure<ScoringProfiles>(configuration.GetSection(ScoringProfiles.SectionName));
 
