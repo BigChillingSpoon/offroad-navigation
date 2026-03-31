@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Core", "Offroad.Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.Tests", "Offroad.Tests\Offroad.Tests.csproj", "{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Offroad.IntegrationTests", "Offroad.IntegrationTests\Offroad.IntegrationTests.csproj", "{0923BC6D-220C-4EE1-AEA9-4A91CCC1A5D2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D78FBFAD-7F1D-4E98-A166-F50AE5F0A5A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0923BC6D-220C-4EE1-AEA9-4A91CCC1A5D2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0923BC6D-220C-4EE1-AEA9-4A91CCC1A5D2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0923BC6D-220C-4EE1-AEA9-4A91CCC1A5D2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0923BC6D-220C-4EE1-AEA9-4A91CCC1A5D2}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
