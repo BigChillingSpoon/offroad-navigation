@@ -10,5 +10,6 @@ namespace Routing.Application.Contracts.Responses
         public TripDetails Details { get; init; }
         public TripMetrics Metrics { get; init; }
         public IReadOnlyList<TripEvent> Events { get; init; }
+        public IReadOnlyList<PolicyViolationType> PolicyViolations { get; init; } = [];
     }
 }

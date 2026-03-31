@@ -1,4 +1,5 @@
 using Routing.Application.Contracts.Responses;
+using Routing.Application.Planning.Intents;
 using Routing.Domain.Models;
 using Routing.Domain.ValueObjects;
 
@@ -6,13 +7,15 @@ namespace Routing.Application.Mappings
 {
     public static class RoutingResultMappings
     {
-        public static TripResult ToTripResult(this Trip trip)
+        public static TripResult ToTripResult(this Trip trip, ITripIntent? intent = null)
         {
             if (trip is null)
                 throw new InvalidOperationException("Trip cannot be null.");
 
             if (trip.Plan is null)
                 throw new InvalidOperationException("TripPlan is missing.");
+
+            var events = TripEventMappings.MapToEvents(trip.Plan);
 
             return new()
             {
@@ -21,7 +24,10 @@ namespace Routing.Application.Mappings
                 Type = trip.Type,
                 Metrics = trip.Plan.ToTripMetrics(),
                 Details = trip.Plan.ToTripDetails(),
-                Events = TripEventMappings.MapToEvents(trip.Plan)
+                Events = events,
+                PolicyViolations = intent is not null
+                    ? PolicyViolationDetector.Detect(events, intent)
+                    : []
             };
         }
 

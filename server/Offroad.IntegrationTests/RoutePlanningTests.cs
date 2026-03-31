@@ -174,6 +174,102 @@ public sealed class RoutePlanningTests : IClassFixture<CustomWebApplicationFacto
     }
 
     // ---------------------------------------------------------------
+    // TEST 4 — Honest Routing: Gates disallowed but cage forces gate crossing
+    //   allowGates=false, mock GH still returns a lift_gate
+    //   Assert: 200 OK + policyViolations contains enum "Gates"
+    // ---------------------------------------------------------------
+    [Fact]
+    public async Task PlanRoute_GatesDisallowedButRouteContainsGate_AddsPolicyViolation()
+    {
+        // Arrange — GH returns a gate despite the penalty (cage scenario)
+        var (polyline, pointCount) = BuildTestPolyline();
+
+        var ghJson = GraphHopperResponseBuilder.Success(
+            encodedPolyline: polyline,
+            pointCount: pointCount,
+            distance: 450.0,
+            customBarrierJson: """[[0, 2, "none"], [2, 3, "lift_gate"], [3, 4, "none"]]""");
+
+        _factory.GraphHopperHandler.SetupJsonResponse(ghJson);
+
+        var request = new PlanRouteRequest
+        {
+            StartLatitude = 50.08,
+            StartLongitude = 14.42,
+            EndLatitude = 50.084,
+            EndLongitude = 14.424,
+            AllowGates = false,
+            AllowPrivateRoads = true,
+            RouteBalance = RouteBalance.Balanced
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/routes/plan", request);
+
+        // Assert — 200 OK, NOT 400: the user needs the route to escape the cage
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var violations = root.GetProperty("policyViolations").EnumerateArray()
+            .Select(v => v.GetString())
+            .ToList();
+
+        violations.Should().ContainSingle(v => v == nameof(PolicyViolationType.Gates),
+            "the response must include a typed Gates violation so the frontend can localise the warning");
+    }
+
+    // ---------------------------------------------------------------
+    // TEST 5 — Honest Routing: Private roads disallowed but cage forces private road
+    //   allowPrivateRoads=false, mock GH returns road_access = "private"
+    //   Assert: 200 OK + policyViolations contains enum "PrivateRoads"
+    // ---------------------------------------------------------------
+    [Fact]
+    public async Task PlanRoute_PrivateRoadsDisallowedButRouteContainsPrivate_AddsPolicyViolation()
+    {
+        // Arrange — GH returns a private road despite the penalty
+        var (polyline, pointCount) = BuildTestPolyline();
+
+        var ghJson = GraphHopperResponseBuilder.Success(
+            encodedPolyline: polyline,
+            pointCount: pointCount,
+            distance: 450.0,
+            roadAccessJson: """[[0, 2, "yes"], [2, 4, "private"]]""");
+
+        _factory.GraphHopperHandler.SetupJsonResponse(ghJson);
+
+        var request = new PlanRouteRequest
+        {
+            StartLatitude = 50.08,
+            StartLongitude = 14.42,
+            EndLatitude = 50.084,
+            EndLongitude = 14.424,
+            AllowGates = true,
+            AllowPrivateRoads = false,
+            RouteBalance = RouteBalance.Balanced
+        };
+
+        // Act
+        var response = await _client.PostAsJsonAsync("/api/routes/plan", request);
+
+        // Assert — 200 OK with a policy violation, not a rejection
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var json = await response.Content.ReadAsStringAsync();
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+
+        var violations = root.GetProperty("policyViolations").EnumerateArray()
+            .Select(v => v.GetString())
+            .ToList();
+
+        violations.Should().ContainSingle(v => v == nameof(PolicyViolationType.PrivateRoads),
+            "the response must include a typed PrivateRoads violation so the frontend can localise the warning");
+    }
+
+    // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
 

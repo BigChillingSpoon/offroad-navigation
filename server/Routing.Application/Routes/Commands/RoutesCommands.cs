@@ -65,9 +65,7 @@ namespace Routing.Application.Routes.Commands
             try
             {
                 var routeResult = await _routeFinder.FindRouteAsync(intent, profile, ct);
-                return routeResult.Bind<TripResult>(r =>
-                     r.ToTripResult()
-                );
+                return routeResult.Bind<TripResult>(r => r.ToTripResult(intent));
             }
             catch (RoutingProviderException ex)
             {

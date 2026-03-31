@@ -64,7 +64,8 @@ namespace Routing.Application.Loops.Commands
             try
             {
                 var loopsResult = await _loopFinder.FindLoopsAsync(intent, profile, ct);
-                return loopsResult.Bind<IReadOnlyList<TripResult>>(ls => ls.Select(l => l.ToTripResult()).ToList());
+                return loopsResult.Bind<IReadOnlyList<TripResult>>(ls =>
+                    ls.Select(l => l.ToTripResult(intent)).ToList());
             }
             catch (RoutingProviderException ex)
             {
