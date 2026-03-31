@@ -1,0 +1,45 @@
+name: Enterprise .NET CI
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    name: Build & Test Pipeline
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore server/Offroad.sln
+      
+    # compiles in release (only ONCE)
+    - name: Build
+      run: dotnet build server/Offroad.sln --no-restore --configuration Release
+      
+    # 1. fáze: Unit Testy (Fail-fast)
+    - name: Run Unit Tests
+      run: dotnet test server/Offroad.Tests/Offroad.Tests.csproj --no-build --configuration Release --logger "trx;LogFileName=unit-tests.trx"
+      
+    # 2: Integration tests
+    - name: Run Integration Tests
+      run: dotnet test server/Offroad.IntegrationTests/Offroad.IntegrationTests.csproj --no-build --configuration Release --logger "trx;LogFileName=integration-tests.trx"
+
+    # 3: Reports run always
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: always() 
+      with:
+        name: test-results
+        path: '**/*.trx'
+        retention-days: 7
