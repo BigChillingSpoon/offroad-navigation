@@ -6,6 +6,6 @@ namespace Routing.Domain.Enums
     public enum PolicyViolationType
     {
         Gates,
-        PrivateRoads
+        RestrictedArea
     }
 }

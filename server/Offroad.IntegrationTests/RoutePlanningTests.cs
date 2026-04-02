@@ -224,19 +224,23 @@ public sealed class RoutePlanningTests : IClassFixture<CustomWebApplicationFacto
     // ---------------------------------------------------------------
     // TEST 5 — Honest Routing: Private roads disallowed but cage forces private road
     //   allowPrivateRoads=false, mock GH returns road_access = "private"
-    //   Assert: 200 OK + policyViolations contains enum "PrivateRoads"
+    //   Assert: 200 OK + policyViolations contains enum "RestrictedArea"
+    //
+    //   The private interval [0,2] ends at point index 2, which is ~222m
+    //   from the last point (index 4). This exceeds the 50m last-mile
+    //   tolerance, so the detector correctly flags it as a real violation.
     // ---------------------------------------------------------------
     [Fact]
     public async Task PlanRoute_PrivateRoadsDisallowedButRouteContainsPrivate_AddsPolicyViolation()
     {
-        // Arrange — GH returns a private road despite the penalty
+        // Arrange — GH returns a private road at the START of the route (far from destination)
         var (polyline, pointCount) = BuildTestPolyline();
 
         var ghJson = GraphHopperResponseBuilder.Success(
             encodedPolyline: polyline,
             pointCount: pointCount,
             distance: 450.0,
-            roadAccessJson: """[[0, 2, "yes"], [2, 4, "private"]]""");
+            roadAccessJson: """[[0, 2, "private"], [2, 4, "yes"]]""");
 
         _factory.GraphHopperHandler.SetupJsonResponse(ghJson);
 
@@ -265,8 +269,8 @@ public sealed class RoutePlanningTests : IClassFixture<CustomWebApplicationFacto
             .Select(v => v.GetString())
             .ToList();
 
-        violations.Should().ContainSingle(v => v == nameof(PolicyViolationType.PrivateRoads),
-            "the response must include a typed PrivateRoads violation so the frontend can localise the warning");
+        violations.Should().ContainSingle(v => v == nameof(PolicyViolationType.RestrictedArea),
+            "the response must include a typed RestrictedArea violation so the frontend can localise the warning");
     }
 
     // ---------------------------------------------------------------

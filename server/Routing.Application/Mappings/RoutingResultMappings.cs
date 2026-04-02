@@ -1,7 +1,9 @@
 using Routing.Application.Contracts.Responses;
+using Routing.Application.Planning.Encoding;
 using Routing.Application.Planning.Intents;
 using Routing.Domain.Models;
 using Routing.Domain.ValueObjects;
+using System.Text;
 
 namespace Routing.Application.Mappings
 {
@@ -17,6 +19,8 @@ namespace Routing.Application.Mappings
 
             var events = TripEventMappings.MapToEvents(trip.Plan);
 
+            var decodedCoordinates = PolylineDecoder.Decode(trip.Plan.Polyline);
+
             return new()
             {
                 Id = trip.Id,
@@ -26,7 +30,7 @@ namespace Routing.Application.Mappings
                 Details = trip.Plan.ToTripDetails(),
                 Events = events,
                 PolicyViolations = intent is not null
-                    ? PolicyViolationDetector.Detect(events, intent)
+                    ? PolicyViolationDetector.Detect(events, intent, decodedCoordinates)
                     : []
             };
         }
