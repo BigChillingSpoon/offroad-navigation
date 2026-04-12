@@ -1,7 +1,7 @@
-using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Geometries.Prepared;
 using NetTopologySuite.Index.Strtree;
+using Routing.Application.Contracts;
 using Routing.Domain.Enums;
 using Routing.Domain.Exceptions;
 using Routing.Domain.ValueObjects;
@@ -9,35 +9,19 @@ using Coordinate = Routing.Domain.ValueObjects.Coordinate;
 
 namespace Routing.Application.Planning.Candidates.Builders
 {
+    // POZOR: Budeš muset upravit i IRestrictedZoneBuilder interface, aby vracel Task!
     public class RestrictedZoneBuilder : IRestrictedZoneBuilder
     {
         private readonly GeometryFactory _geometryFactory;
-        private readonly STRtree<IPreparedGeometry> _parksSpatialIndex;
+        private readonly IGisService _gisService;
 
-        public RestrictedZoneBuilder(FeatureCollection parksCollection)
+        public RestrictedZoneBuilder(IGisService gisService)
         {
-            _geometryFactory = new GeometryFactory();
-            _parksSpatialIndex = BuildSpatialIndex(parksCollection);
+            _gisService = gisService;
+            _geometryFactory = new GeometryFactory(new PrecisionModel(), 4326); // WGS 84
         }
 
-        private static STRtree<IPreparedGeometry> BuildSpatialIndex(FeatureCollection parksCollection)
-        {
-            var index = new STRtree<IPreparedGeometry>();
-            var prepFactory = new PreparedGeometryFactory();
-
-            if (parksCollection == null) return index;
-
-            foreach (var feature in parksCollection)
-            {
-                var preparedGeom = prepFactory.Create(feature.Geometry);
-                index.Insert(feature.Geometry.EnvelopeInternal, preparedGeom);
-            }
-
-            index.Build();
-            return index;
-        }
-
-        public IReadOnlyList<Interval<RestrictionType>> Build(
+        public async Task<IReadOnlyList<Interval<RestrictionType>>> BuildAsync(
             IReadOnlyList<Interval<RoadAccessType>> roadAccessIntervals,
             IReadOnlyList<Coordinate> geometry)
         {
@@ -47,7 +31,8 @@ namespace Routing.Application.Planning.Candidates.Builders
             var canvas = new RestrictionType?[geometry.Count];
 
             ApplyRoadAccessLayer(canvas, roadAccessIntervals);
-            ApplyNationalParksLayer(canvas, geometry);
+
+            await ApplyNationalParksLayerAsync(canvas, geometry);
 
             return ExtractZones(canvas);
         }
@@ -65,16 +50,34 @@ namespace Routing.Application.Planning.Candidates.Builders
             }
         }
 
-        private void ApplyNationalParksLayer(RestrictionType?[] canvas, IReadOnlyList<Coordinate> geometry)
+        private async Task ApplyNationalParksLayerAsync(RestrictionType?[] canvas, IReadOnlyList<Coordinate> geometry)
         {
-            if (_parksSpatialIndex.Count == 0) return;
+            // 1. We create a "LineString" from the route points to get the spatial envelope (Bounding Box)
+            var ntsCoordinates = geometry.Select(g => new NetTopologySuite.Geometries.Coordinate(g.Longitude, g.Latitude)).ToArray();
+            var routeLine = _geometryFactory.CreateLineString(ntsCoordinates);
 
+            // 2. Ask the db for parks that overlap with the route's bounding box - this will give us a much smaller set of parks to check against
+            var overlappingParks = await _gisService.GetRestrictedZonesInAreaAsync(routeLine);
+
+            if (overlappingParks.Count == 0) return; // Trasa nejde pøes žádný park, konec.
+
+            // 3. create local index for the overlapping parks to speed up point-in-polygon checks
+            var localIndex = new STRtree<IPreparedGeometry>();
+            var prepFactory = new PreparedGeometryFactory();
+
+            foreach (var parkGeom in overlappingParks)
+            {
+                var preparedGeom = prepFactory.Create(parkGeom);
+                localIndex.Insert(parkGeom.EnvelopeInternal, preparedGeom);
+            }
+            localIndex.Build();
+
+            
             for (int i = 0; i < geometry.Count; i++)
             {
-                var point = _geometryFactory.CreatePoint(
-                    new NetTopologySuite.Geometries.Coordinate(geometry[i].Longitude, geometry[i].Latitude));
+                var point = _geometryFactory.CreatePoint(ntsCoordinates[i]);
 
-                var candidateParks = _parksSpatialIndex.Query(point.EnvelopeInternal);
+                var candidateParks = localIndex.Query(point.EnvelopeInternal);
 
                 foreach (var parkGeom in candidateParks)
                 {

@@ -1,5 +1,6 @@
 using NetTopologySuite.Features;
 using NetTopologySuite.Geometries;
+using Routing.Application.Contracts;
 using Routing.Application.Planning.Candidates.Builders;
 using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
@@ -12,25 +13,25 @@ public class RestrictedZoneBuilderTests
     #region Empty / No Restriction Tests
 
     [Fact]
-    public void Build_EmptyGeometry_ReturnsEmptyList()
+    public async Task Build_EmptyGeometry_ReturnsEmptyList()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var sut = new RestrictedZoneBuilder(new FakeGisService(new FeatureCollection()));
         var geometry = new List<Coordinate>();
         var roadAccessIntervals = Array.Empty<Interval<RoadAccessType>>();
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Empty(result);
     }
 
     [Fact]
-    public void Build_NoRestrictions_ReturnsEmptyList()
+    public async Task Build_NoRestrictions_ReturnsEmptyList()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(100.0, 100.0, 101.0, 101.0));
+        var sut = new RestrictedZoneBuilder(new FakeGisService(CreateMockParksCollection(100.0, 100.0, 101.0, 101.0)));
         var geometry = CreateGeometry(10);
         var roadAccessIntervals = new[]
         {
@@ -38,7 +39,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Empty(result);
@@ -49,10 +50,10 @@ public class RestrictedZoneBuilderTests
     #region Base Layer (Road Access) Tests
 
     [Fact]
-    public void Build_OnlyBaseLayer_ReturnsCorrectZones()
+    public async Task Build_OnlyBaseLayer_ReturnsCorrectZones()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var sut = new RestrictedZoneBuilder(new FakeGisService(new FeatureCollection()));
         var geometry = CreateGeometry(10);
         var roadAccessIntervals = new[]
         {
@@ -62,7 +63,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Single(result);
@@ -72,10 +73,10 @@ public class RestrictedZoneBuilderTests
     }
 
     [Fact]
-    public void Build_RouteEndsInsideRestriction_ClosesZoneCorrectly()
+    public async Task Build_RouteEndsInsideRestriction_ClosesZoneCorrectly()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var sut = new RestrictedZoneBuilder(new FakeGisService(new FeatureCollection()));
         var geometry = CreateGeometry(11);
         var roadAccessIntervals = new[]
         {
@@ -84,7 +85,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Single(result);
@@ -94,10 +95,10 @@ public class RestrictedZoneBuilderTests
     }
 
     [Fact]
-    public void Build_UnknownAccess_MappedAsUnknown()
+    public async Task Build_UnknownAccess_MappedAsUnknown()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(new FeatureCollection());
+        var sut = new RestrictedZoneBuilder(new FakeGisService(new FeatureCollection()));
         var geometry = CreateGeometry(5);
         var roadAccessIntervals = new[]
         {
@@ -105,7 +106,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Single(result);
@@ -119,12 +120,12 @@ public class RestrictedZoneBuilderTests
     #region Top Layer (National Parks) Tests
 
     [Fact]
-    public void Build_OnlyTopLayer_ReturnsCorrectZones()
+    public async Task Build_OnlyTopLayer_ReturnsCorrectZones()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+        var sut = new RestrictedZoneBuilder(new FakeGisService(CreateMockParksCollection(
             minLon: 0.0035, minLat: 0.5,
-            maxLon: 0.0065, maxLat: 1.5));
+            maxLon: 0.0065, maxLat: 1.5)));
         var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
@@ -132,7 +133,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Single(result);
@@ -146,12 +147,12 @@ public class RestrictedZoneBuilderTests
     #region Painter's Algorithm Tests
 
     [Fact]
-    public void Build_PaintersAlgorithm_Overlap_OverwritesCorrectly()
+    public async Task Build_PaintersAlgorithm_Overlap_OverwritesCorrectly()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+        var sut = new RestrictedZoneBuilder(new FakeGisService(CreateMockParksCollection(
             minLon: 0.0035, minLat: 0.5,
-            maxLon: 0.0065, maxLat: 1.5));
+            maxLon: 0.0065, maxLat: 1.5)));
         var geometry = CreateGeometryOnLine(11, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
@@ -159,7 +160,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Equal(3, result.Count);
@@ -181,12 +182,12 @@ public class RestrictedZoneBuilderTests
     }
 
     [Fact]
-    public void Build_PaintersAlgorithm_ParkCoversEntireBaseLayer_ReturnsOnlyParkZone()
+    public async Task Build_PaintersAlgorithm_ParkCoversEntireBaseLayer_ReturnsOnlyParkZone()
     {
         // Arrange
-        var sut = new RestrictedZoneBuilder(CreateMockParksCollection(
+        var sut = new RestrictedZoneBuilder(new FakeGisService(CreateMockParksCollection(
             minLon: -1.0, minLat: 0.0,
-            maxLon: 1.0, maxLat: 2.0));
+            maxLon: 1.0, maxLat: 2.0)));
         var geometry = CreateGeometryOnLine(5, latitude: 1.0, startLongitude: 0.0, step: 0.001);
         var roadAccessIntervals = new[]
         {
@@ -194,7 +195,7 @@ public class RestrictedZoneBuilderTests
         };
 
         // Act
-        var result = sut.Build(roadAccessIntervals, geometry);
+        var result = await sut.BuildAsync(roadAccessIntervals, geometry);
 
         // Assert
         Assert.Single(result);
@@ -237,6 +238,28 @@ public class RestrictedZoneBuilderTests
         var collection = new FeatureCollection();
         collection.Add(new Feature(polygon, new AttributesTable()));
         return collection;
+    }
+
+    #endregion
+
+    #region Fakes
+
+    // Tato tøída simuluje chování PostGISu pøímo v pamìti pro úèely testování
+    private class FakeGisService : IGisService
+    {
+        private readonly List<Polygon> _parks;
+
+        public FakeGisService(FeatureCollection features)
+        {
+            _parks = features.Select(f => f.Geometry as Polygon).Where(p => p != null).ToList()!;
+        }
+
+        public Task<List<Polygon>> GetRestrictedZonesInAreaAsync(Geometry routeBoundingBox)
+        {
+            // Vrací pouze ty parky, které se protnou s trasou
+            var intersectingParks = _parks.Where(p => p.Intersects(routeBoundingBox)).ToList();
+            return Task.FromResult(intersectingParks);
+        }
     }
 
     #endregion

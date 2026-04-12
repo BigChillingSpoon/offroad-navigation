@@ -46,17 +46,6 @@ namespace Routing.Domain
             services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
             services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
             services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
-
-            // GEODATA
-            services.AddSingleton<FeatureCollection>(sp =>
-            {
-                var config = sp.GetRequiredService<IConfiguration>();
-                var path = config["Routing:ParksGeoJsonPath"]
-                    ?? throw new InvalidOperationException("Configuration 'Routing:ParksGeoJsonPath' is missing.");
-
-                var fileContent = File.ReadAllText(path);
-                return new GeoJsonReader().Read<FeatureCollection>(fileContent);
-            });
             
             // OPTIONS
             services.Configure<ScoringProfiles>(configuration.GetSection(ScoringProfiles.SectionName));

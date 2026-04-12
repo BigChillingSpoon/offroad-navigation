@@ -33,12 +33,15 @@ namespace Routing.Application.Planning.Candidates.Generators
             if (routes is null || !routes.Any())
                 return Array.Empty<TripCandidate>();
 
-            return routes
-                .Select(MapToCandidate)
-                .ToList();
+            int index = 0;
+            var candidateTasks = routes.Select(route => MapToCandidateAsync(route, index++));
+
+            TripCandidate[] candidates = await Task.WhenAll(candidateTasks);
+
+            return candidates.ToList();
         }
 
-        private TripCandidate MapToCandidate(ProviderRoute route, int index)
+        private async Task<TripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
@@ -55,7 +58,7 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var barriers = BarrierBuilder.Build(route.BarrierIntervals, geometry);
 
-            var restrictedZones = _restrictedZoneBuilder.Build(route.RoadAccessIntervals, geometry);
+            var restrictedZones = await _restrictedZoneBuilder.BuildAsync(route.RoadAccessIntervals, geometry);
 
             var maxGradient = GeoCalculator.CalculateMaxGradientPercentage(geometry);
 

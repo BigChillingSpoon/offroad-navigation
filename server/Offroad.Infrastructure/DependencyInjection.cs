@@ -11,6 +11,7 @@ using Routing.Infrastructure.GraphHopper.Mappings;
 using Microsoft.EntityFrameworkCore;
 using Routing.Infrastructure.Data;
 using Routing.Infrastructure.Persistance;
+using Routing.Application.Contracts;
 
 namespace Routing.Infrastructure
 {
@@ -96,6 +97,7 @@ namespace Routing.Infrastructure
 
             //GIS related
             services.AddScoped<GisDataSeeder>();
+            services.AddScoped<IGisService, GisService>();
             return services;
         }
     }

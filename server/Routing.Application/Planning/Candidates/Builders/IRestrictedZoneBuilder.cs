@@ -5,6 +5,6 @@ namespace Routing.Application.Planning.Candidates.Builders
 {
     public interface IRestrictedZoneBuilder
     {
-        IReadOnlyList<Interval<RestrictionType>> Build(IReadOnlyList<Interval<RoadAccessType>> roadAccessIntervals, IReadOnlyList<Coordinate> geometry);
+        Task<IReadOnlyList<Interval<RestrictionType>>> BuildAsync(IReadOnlyList<Interval<RoadAccessType>> roadAccessIntervals, IReadOnlyList<Coordinate> geometry);
     }
 }
