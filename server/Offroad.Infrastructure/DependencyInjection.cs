@@ -8,6 +8,10 @@ using Microsoft.Extensions.Configuration;
 using Routing.Infrastructure.GraphHopper.JsonConverters;
 using System.Text.Json;
 using Routing.Infrastructure.GraphHopper.Mappings;
+using Microsoft.EntityFrameworkCore;
+using Routing.Infrastructure.Data;
+using Routing.Infrastructure.Persistance;
+
 namespace Routing.Infrastructure
 {
     public static class DependencyInjection
@@ -83,6 +87,15 @@ namespace Routing.Infrastructure
             //Mappers
             services.AddSingleton<GraphHopperResponseMapper>();
 
+            //DB CONTEXT
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(
+                    configuration.GetConnectionString("DefaultConnection"), 
+                    x => x.UseNetTopologySuite()
+                ));
+
+            //GIS related
+            services.AddScoped<GisDataSeeder>();
             return services;
         }
     }

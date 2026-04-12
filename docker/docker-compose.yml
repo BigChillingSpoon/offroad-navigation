@@ -1,28 +1,29 @@
 services:
-  api:
-    build:
-      context: ..
-      dockerfile: server/Offroad.Api/Dockerfile
-    container_name: offroad-api
-    ports:
-      - "5000:8080"
-    environment:
-      ASPNETCORE_ENVIRONMENT: Development
-      Serilog__SeqServerUrl: "http://seq:80"
-    depends_on:
-      - postgres
-      - graphhopper
-      - seq 
+  # api:
+  #   build:
+  #     context: ..
+  #     dockerfile: server/Offroad.Api/Dockerfile
+  #   container_name: offroad-api
+  #   ports:
+  #     - "5000:8080"
+  #   environment:
+  #     ASPNETCORE_ENVIRONMENT: Development
+  #     Serilog__SeqServerUrl: "http://seq:80"
+  #     ConnectionStrings__DefaultConnection: "Host=postgres;Port=5432;Database=offroad;Username=offroad;Password=offroad"
+  #   depends_on:
+  #     - postgres
+  #     - graphhopper
+  #     - seq 
 
   postgres:
     image: postgis/postgis:16-3.4
     container_name: offroad-postgres
-    environment:
+    environment:  
       POSTGRES_DB: offroad
       POSTGRES_USER: offroad
       POSTGRES_PASSWORD: offroad
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

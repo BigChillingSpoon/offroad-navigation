@@ -4,12 +4,13 @@ using Routing.Application;
 using Routing.Domain;
 using Serilog;
 using Serilog.Formatting.Compact;
+using Offroad.Api.Extensions;
 
 namespace Offroad.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -18,6 +19,8 @@ namespace Offroad.Api
             var app = builder.Build();
 
             ConfigurePipeline(app);
+
+            await app.UseGisDataSeedingAsync();
 
             app.Run();
         }
