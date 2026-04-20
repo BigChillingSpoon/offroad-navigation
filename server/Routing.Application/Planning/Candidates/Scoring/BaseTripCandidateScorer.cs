@@ -11,7 +11,7 @@ namespace Routing.Application.Planning.Candidates.Scoring
     {
         protected abstract PenaltyWeights Weights { get; }
 
-        public IReadOnlyList<ScoredTripCandidate<TCandidate>> Score(IReadOnlyList<TCandidate> candidates, TIntent intent, UserRoutingProfile profile, PlannerSettings settings)
+        public IReadOnlyList<ScoredTripCandidate<TCandidate>> Score(IReadOnlyList<TCandidate> candidates, TIntent intent, UserRoutingProfile profile)
         {
             var scoredList = new List<ScoredTripCandidate<TCandidate>>(candidates.Count);
 

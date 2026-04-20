@@ -17,11 +17,11 @@ namespace Routing.Application.Planning.Planner
             _pipelineFactory = pipelineFactory;
         }
 
-        public Task<IReadOnlyList<TripPlan>> PlanAsync<TIntent>(TIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct)
+        public Task<IReadOnlyList<TripPlan>> PlanAsync<TIntent>(TIntent intent, UserRoutingProfile profile, CancellationToken ct)
             where TIntent : ITripIntent
         {
             var pipeline = _pipelineFactory.Create<TIntent>();
-            return pipeline.PlanAsync(intent, profile, settings, ct);
+            return pipeline.PlanAsync(intent, profile, ct);
         }
     }
 }

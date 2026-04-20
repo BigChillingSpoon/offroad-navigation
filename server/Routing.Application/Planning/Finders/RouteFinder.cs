@@ -18,9 +18,8 @@ namespace Routing.Application.Planning.Finders
 
         public async Task<Result<Trip>> FindRouteAsync(RouteIntent intent, UserRoutingProfile profile, CancellationToken ct)
         {
-            var settings = new PlannerSettings();
 
-            var plans = await _planner.PlanAsync(intent, profile, settings, ct);
+            var plans = await _planner.PlanAsync(intent, profile, ct);
             var firstPlan = plans.FirstOrDefault(); //for now we only return most suitable route, without any alternatives
 
             //no plan = no trip :)

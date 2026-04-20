@@ -32,9 +32,9 @@ namespace Routing.Application.Planning.Pipelines
             _scorer = scorer;
         }
 
-        public async Task<IReadOnlyList<TripPlan>> PlanAsync(TIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct)
+        public async Task<IReadOnlyList<TripPlan>> PlanAsync(TIntent intent, UserRoutingProfile profile, CancellationToken ct)
         {
-            var candidates = await _generator.GenerateCandidatesAsync(intent, settings, ct);
+            var candidates = await _generator.GenerateCandidatesAsync(intent, ct);
 
             // Hard filtering
             var validCandidates = candidates
@@ -42,7 +42,7 @@ namespace Routing.Application.Planning.Pipelines
                 .ToList();
 
             // Scoring
-            var scored = _scorer.Score(validCandidates, intent, profile, settings);
+            var scored = _scorer.Score(validCandidates, intent, profile);
 
             // Ordering
             var ordered = scored

@@ -37,7 +37,7 @@ public class LoopCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(100.0, result[0].Score, precision: 1);
@@ -61,7 +61,7 @@ public class LoopCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(95.0, result[0].Score, precision: 1);
@@ -81,7 +81,7 @@ public class LoopCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(-20.0, result[0].Score, precision: 5);
@@ -95,7 +95,7 @@ public class LoopCandidateScorerTests
     public void Score_EmptyCandidates_ReturnsEmptyList()
     {
         // Act
-        var result = _sut.Score(Array.Empty<TripCandidate>(), CreateLoopIntent(), new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(Array.Empty<TripCandidate>(), CreateLoopIntent(), new UserRoutingProfile());
 
         // Assert
         Assert.Empty(result);

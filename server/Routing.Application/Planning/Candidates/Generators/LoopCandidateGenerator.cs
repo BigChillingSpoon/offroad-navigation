@@ -23,7 +23,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             _candidateFactory = candidateFactory;
         }
 
-        public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, PlannerSettings settings, CancellationToken ct)
+        public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
             throw new NotImplementedException(); 
         }

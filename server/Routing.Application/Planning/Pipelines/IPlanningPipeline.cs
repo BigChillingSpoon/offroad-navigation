@@ -12,7 +12,7 @@ namespace Routing.Application.Planning.Pipelines
 {
     public interface IPlanningPipeline<in TIntent> where TIntent : ITripIntent
     {
-        Task<IReadOnlyList<TripPlan>> PlanAsync(TIntent intent, UserRoutingProfile profile, PlannerSettings settings, CancellationToken ct);
+        Task<IReadOnlyList<TripPlan>> PlanAsync(TIntent intent, UserRoutingProfile profile, CancellationToken ct);
     }
 
     internal sealed class RoutePlanningPipeline : BasePlanningPipeline<RouteIntent, TripCandidate>

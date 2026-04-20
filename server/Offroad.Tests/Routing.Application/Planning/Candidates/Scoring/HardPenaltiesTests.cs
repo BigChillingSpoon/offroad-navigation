@@ -45,7 +45,7 @@ public class HardPenaltiesTests
         };
 
         // Act
-        var result = sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert — base 100.0 - 500.0 (park) - 150.0 (gate) = -550.0
         Assert.Equal(-550.0, result[0].Score, precision: 1);
@@ -78,7 +78,7 @@ public class HardPenaltiesTests
         };
 
         // Act
-        var result = sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert — base 100.0 - 50.0 (forestry) - 200.0 (private) = -150.0
         Assert.Equal(-150.0, result[0].Score, precision: 5);
@@ -120,7 +120,7 @@ public class HardPenaltiesTests
         };
 
         // Act
-        var result = sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert — base 100.0 - 600.0 (park, loop config) - 200.0 (gate, loop config) = -700.0
         Assert.Equal(-700.0, result[0].Score, precision: 1);
@@ -153,11 +153,11 @@ public class HardPenaltiesTests
         // Act
         var routeResult = routeScorer.Score(candidates,
             new RouteIntent { Start = new Coordinate(50, 14), End = new Coordinate(50.1, 14.1), Balance = RouteBalance.MaxOffroad },
-            new UserRoutingProfile(), new PlannerSettings());
+            new UserRoutingProfile());
 
         var loopResult = loopScorer.Score(candidates,
             new LoopIntent { Start = new Coordinate(50, 14), PreferredLengthKm = 30, MaxDriveDistanceKm = 50 },
-            new UserRoutingProfile(), new PlannerSettings());
+            new UserRoutingProfile());
 
         // Assert — Loop NationalPark penalty (600) is higher than Route (500)
         Assert.True(routeResult[0].Score > loopResult[0].Score,
@@ -178,7 +178,7 @@ public class HardPenaltiesTests
         var candidates = new[] { CreateCandidate(totalDistance: 10_000) };
 
         // Act
-        var result = sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert — pure base score, no deductions
         Assert.Equal(100.0, result[0].Score, precision: 5);

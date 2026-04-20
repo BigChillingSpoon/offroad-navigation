@@ -10,6 +10,6 @@ namespace Routing.Application.Planning.Candidates.Scoring
         where TIntent : ITripIntent
         where TCandidate : TripCandidate
     {
-        IReadOnlyList<ScoredTripCandidate<TCandidate>> Score(IReadOnlyList<TCandidate> candidates, TIntent intent, UserRoutingProfile profile, PlannerSettings settings);
+        IReadOnlyList<ScoredTripCandidate<TCandidate>> Score(IReadOnlyList<TCandidate> candidates, TIntent intent, UserRoutingProfile profile);
     }
 }

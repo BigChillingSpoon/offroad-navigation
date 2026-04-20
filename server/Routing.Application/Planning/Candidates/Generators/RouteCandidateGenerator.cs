@@ -16,7 +16,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             _candidateFactory = candidateFactory;
         }
 
-        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, PlannerSettings settings, CancellationToken ct)
+        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, CancellationToken ct)
         {
             var routes = await _routingProvider.GetRoutesAsync(intent, ct);
 
