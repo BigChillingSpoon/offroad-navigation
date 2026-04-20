@@ -2,7 +2,6 @@ using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
@@ -95,7 +94,7 @@ public class LoopCandidateScorerTests
     public void Score_EmptyCandidates_ReturnsEmptyList()
     {
         // Act
-        var result = _sut.Score(Array.Empty<TripCandidate>(), CreateLoopIntent(), new UserRoutingProfile());
+        var result = _sut.Score(Array.Empty<LoopTripCandidate>(), CreateLoopIntent(), new UserRoutingProfile());
 
         // Assert
         Assert.Empty(result);
@@ -120,7 +119,7 @@ public class LoopCandidateScorerTests
         };
     }
 
-    private static TripCandidate CreateCandidate(
+    private static LoopTripCandidate CreateCandidate(
         double totalDistance,
         List<Segment>? segments = null,
         List<RoadBarrier>? barriers = null,
@@ -128,7 +127,7 @@ public class LoopCandidateScorerTests
         double elevationGain = 0,
         double elevationLoss = 0)
     {
-        return TripCandidate.Create(
+        return LoopTripCandidate.Create(
             segments ?? new List<Segment>(),
             barriers ?? new List<RoadBarrier>(),
             restrictedZones ?? new List<Interval<RestrictionType>>(),
@@ -136,7 +135,11 @@ public class LoopCandidateScorerTests
             totalDistance,
             TimeSpan.FromMinutes(30),
             elevationGain,
-            elevationLoss);
+            elevationLoss,
+            0,
+            new Coordinate(50.0, 14.0),
+            0,
+            0);
     }
 
     private static Segment CreateOffroadSegment()

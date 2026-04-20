@@ -2,7 +2,6 @@ using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
@@ -32,7 +31,7 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(100.0, result[0].Score, precision: 5);
@@ -51,7 +50,7 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(100.0, result[0].Score, precision: 5);
@@ -66,10 +65,6 @@ public class RouteCandidateScorerTests
     public void Score_BalancedMode_DetourUnderThreshold_AppliesStandardPenalty()
     {
         // Arrange
-        // Candidate is 10% longer than shortest → detourRatio = 0.1
-        // Standard penalty: 0.1 * 50.0 = 5.0
-        // No offroad segments → offroadScore = 0
-        // Expected: 0 - 5.0 = -5.0
         var intent = CreateRouteIntent(RouteBalance.Balanced);
         var candidates = new[]
         {
@@ -78,12 +73,10 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
-        // Assert — first candidate has 0 detour
+        // Assert
         Assert.Equal(0.0, result[0].Score, precision: 5);
-
-        // Second candidate: detourRatio=0.1, penalty=0.1*50=5.0, score=0-5=-5
         Assert.Equal(-5.0, result[1].Score, precision: 5);
     }
 
@@ -91,10 +84,6 @@ public class RouteCandidateScorerTests
     public void Score_BalancedMode_DetourOverThreshold_AppliesExcessivePenalty()
     {
         // Arrange
-        // Candidate is 50% longer than shortest → detourRatio = 0.5
-        // Threshold = 0.3, so excessive penalty applies:
-        // penalty = 15.0 + (0.5 - 0.3) * 200.0 = 15.0 + 40.0 = 55.0
-        // No offroad → score = 0 - 55.0 = -55.0
         var intent = CreateRouteIntent(RouteBalance.Balanced);
         var candidates = new[]
         {
@@ -103,7 +92,7 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(-55.0, result[1].Score, precision: 5);
@@ -113,9 +102,6 @@ public class RouteCandidateScorerTests
     public void Score_BalancedMode_OffroadReturnsPositiveScore()
     {
         // Arrange
-        // Candidate with 100% offroad, no detour
-        // offroadScore = 1.0 * 100 = 100, detourPenalty = 0
-        // Expected: 100.0
         var intent = CreateRouteIntent(RouteBalance.Balanced);
         var offroadSegment = CreateOffroadSegment();
         var candidates = new[]
@@ -126,7 +112,7 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(100.0, result[0].Score, precision: 1);
@@ -150,9 +136,9 @@ public class RouteCandidateScorerTests
         };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
-        // Assert — OffroadRatio = 1.0, score = 100.0
+        // Assert
         Assert.Equal(100.0, result[0].Score, precision: 1);
     }
 
@@ -164,7 +150,7 @@ public class RouteCandidateScorerTests
         var candidates = new[] { CreateCandidate(totalDistance: 10_000) };
 
         // Act
-        var result = _sut.Score(candidates, intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
 
         // Assert
         Assert.Equal(0.0, result[0].Score, precision: 5);
@@ -181,7 +167,7 @@ public class RouteCandidateScorerTests
         var intent = CreateRouteIntent(RouteBalance.Balanced);
 
         // Act
-        var result = _sut.Score(Array.Empty<TripCandidate>(), intent, new UserRoutingProfile(), new PlannerSettings());
+        var result = _sut.Score(Array.Empty<TripCandidate>(), intent, new UserRoutingProfile());
 
         // Assert
         Assert.Empty(result);
@@ -222,7 +208,8 @@ public class RouteCandidateScorerTests
             totalDistance,
             TimeSpan.FromMinutes(30),
             elevationGain,
-            elevationLoss);
+            elevationLoss,
+            0);
     }
 
     private static Segment CreateOffroadSegment()
