@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using System.Collections.Generic;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
@@ -24,8 +23,8 @@ namespace Routing.Application.Planning.Candidates.Scoring
 
             // Loop specific - placeholder logic
             var transitKm = candidate.EstimatedTransitDistanceMeters / 1000.0;
-            var transitPenalty = transitKm * 1.0; // Tady bys ideálnì použil nìjakou váhu z 'weights.TransitPenalty' 
-            
+            var transitPenalty = transitKm * 1.0;
+
             // ... to be added
 
             return offroadScore - elevationPenalty - transitPenalty;

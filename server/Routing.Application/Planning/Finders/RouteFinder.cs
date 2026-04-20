@@ -1,7 +1,7 @@
 ﻿using Offroad.Core;
-using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
+using Routing.Application.Planning.Pipelines;
 using Routing.Application.Planning.Profiles;
 using Routing.Domain.Enums;
 using Routing.Domain.Models;
@@ -10,8 +10,8 @@ namespace Routing.Application.Planning.Finders
 {
     public class RouteFinder : IRouteFinder
     {
-        private readonly ITripPlanner _planner;
-        public RouteFinder(ITripPlanner planner)
+        private readonly IPlanningPipeline<RouteIntent,TripCandidate> _planner;
+        public RouteFinder(IPlanningPipeline<RouteIntent, TripCandidate> planner)
         {
             _planner = planner;
         }

@@ -1,7 +1,5 @@
-﻿using System.Collections.Generic;
-using Routing.Application.Planning.Candidates.Models;
+﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 
 namespace Routing.Application.Planning.Candidates.Scoring

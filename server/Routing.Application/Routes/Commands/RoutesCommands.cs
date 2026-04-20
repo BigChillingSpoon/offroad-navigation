@@ -10,7 +10,6 @@ using Routing.Domain.Exceptions;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 using Microsoft.Extensions.Logging;
-using Routing.Application.Planning.Planner;
 
 namespace Routing.Application.Routes.Commands
 {

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using Routing.Domain.Enums;
+﻿using Routing.Domain.Enums;
 using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Planning.Candidates.Models
@@ -33,7 +30,7 @@ namespace Routing.Application.Planning.Candidates.Models
             EstimatedTransitDistanceMeters = estimatedTransitDistanceMeters;
         }
 
-        public static LoopTripCandidate CreateLoop(
+        public static LoopTripCandidate Create(
             IReadOnlyList<Segment> segments,
             IReadOnlyList<RoadBarrier> barriers,
             IReadOnlyList<Interval<RestrictionType>> restrictedZones,
@@ -47,7 +44,6 @@ namespace Routing.Application.Planning.Candidates.Models
             int hookPolylineIndex,
             double estimatedTransitDistanceMeters)
         {
-            // Stejná logika jako ve tvém původním TripCandidate.Create
             var offroadDistance = segments.Where(s => s.IsOffroad).Sum(s => s.DistanceMeters);
 
             Validate(totalDistance, duration, offroadDistance, elevationGain, elevationLoss);

@@ -1,11 +1,6 @@
 ﻿using Routing.Domain.Enums;
 using Routing.Domain.Exceptions;
 using Routing.Domain.ValueObjects;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Routing.Application.Planning.Candidates.Models
 {

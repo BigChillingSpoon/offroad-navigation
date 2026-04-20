@@ -4,7 +4,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Routing.Application.Loops.Commands;
 using Routing.Application.Planning.Finders;
-using Routing.Application.Planning.Planner;
 using Routing.Application.Planning;
 using Routing.Application.Routes.Commands;
 using Routing.Application.Contracts;
@@ -21,6 +20,8 @@ using NetTopologySuite.IO;
 using Routing.Application.Planning.Pipelines;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Mappings;
+using Routing.Application.Mappings;
 
 namespace Routing.Domain
 {
@@ -38,28 +39,18 @@ namespace Routing.Domain
             services.AddScoped<IRoutesQueries, RoutesQueries>();
             services.AddScoped<ILoopsQueries, LoopsQueries>();
 
-            // PLANNING
-            services.AddScoped<ITripPlanner, TripPlanner>();
-
             //PIPELINES
-            services.AddScoped<IPlanningPipelineFactory, PlanningPipelineFactory>();
-            services.AddScoped<IPlanningPipeline<RouteIntent>, RoutePlanningPipeline>();
-            services.AddScoped<IPlanningPipeline<LoopIntent>, LoopPlanningPipeline>();
-
-            services.AddScoped<ITileSelector, TileSelector>();//ghost to be removed
+            services.AddScoped(typeof(IPlanningPipeline<,>), typeof(PlanningPipeline<,>));
 
             //FINDERS
             services.AddScoped<ILoopFinder, LoopFinder>();
             services.AddScoped<IRouteFinder, RouteFinder>();
 
             //CANDIDATES
-            services.AddScoped<ITripCandidateGeneratorFactory, TripCandidateGeneratorFactory>();
             services.AddScoped<ICandidateGenerator<RouteIntent, TripCandidate>, RouteCandidateGenerator>();
             services.AddScoped<ICandidateGenerator<LoopIntent, LoopTripCandidate>, LoopCandidateGenerator>();
-            services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();
             services.AddScoped<ITripCandidateScorer<RouteIntent, TripCandidate>, RouteCandidateScorer>();
             services.AddScoped<ITripCandidateScorer<LoopIntent, LoopTripCandidate>, LoopCandidateScorer>();
-            services.AddScoped<ICandidateFactory, TripCandidateFactory>();
 
 
             //GOALS
@@ -75,6 +66,9 @@ namespace Routing.Domain
             // VALIDATION
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            // MAPPERS
+            services.AddScoped<ITripMapper<TripCandidate>,RouteTripMapper>();
+            services.AddScoped<ITripMapper<LoopTripCandidate>,LoopTripMapper>();
             return services;
         }
     }
