@@ -45,6 +45,14 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
         [JsonPropertyName("ch.disable")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? ChDisable { get; init; }
+        
+        [JsonPropertyName("round_trip.distance")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? RoundTripDistance { get; init; }
+        
+        [JsonPropertyName("round_trip.seed")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? RoundTripSeed { get; init; }
     }
 
     public sealed record GraphHopperCustomModel
@@ -59,7 +67,10 @@ namespace Routing.Infrastructure.GraphHopper.DTOs
         [JsonPropertyName("speed")]
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public List<SpeedStatement> Speed { get; init; } = new();
-
+        
+        [JsonPropertyName("distance_influence")]
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        public double? DistanceInfluence { get; set; }
     }
 
     public sealed record PriorityStatement

@@ -25,13 +25,13 @@ namespace Routing.Application.Planning.Candidates.Generators
 
         public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
-            var routes = await _routingProvider.GetLoopsAsync(intent, ct);
+            var loops = await _routingProvider.GetLoopsAsync(intent, ct);
 
-            if (routes is null || !routes.Any())
+            if (loops is null || !loops.Any())
                 return Array.Empty<LoopTripCandidate>();
 
             int index = 0;
-            var candidateTasks = routes.Select(route => MapToCandidateAsync(route, index++));
+            var candidateTasks = loops.Select(route => MapToCandidateAsync(route, index++));
 
             LoopTripCandidate[] candidates = await Task.WhenAll(candidateTasks);
 
@@ -43,7 +43,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             var geometry = GetValidGeometry(route.Polyline);
 
             //index is only for debug, to be removed 
-            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_route_candidate_{index}.gpx");
+            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_loop_candidate_{index}.gpx");
 
             var maxEdgeIndex = geometry.Count - 1;
 

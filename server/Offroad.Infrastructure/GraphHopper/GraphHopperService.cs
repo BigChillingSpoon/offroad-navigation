@@ -9,7 +9,7 @@ using Routing.Infrastructure.GraphHopper.Builders;
 using Routing.Application.Planning.Intents;
 using Routing.Domain.Utilities;
 using System.Net.Http.Json;
-using Routing.Domain.ValueObjects; // Pøidáno pro Coordinate
+using Routing.Domain.ValueObjects; // Pï¿½idï¿½no pro Coordinate
 
 namespace Routing.Infrastructure.GraphHopper
 {
@@ -33,8 +33,7 @@ namespace Routing.Infrastructure.GraphHopper
             _jsonOptions = jsonOptions;
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
-
-        // --- PÙVODNÍ METODA PRO TRASY A->B ---
+        
         public async Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken)
         {
             var requestPayload = new GraphHopperRouteRequest
@@ -65,12 +64,6 @@ namespace Routing.Infrastructure.GraphHopper
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
 
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
-        }
-
-        // --- NOVÁ METODA PRO OKRUHY (LOOP) ---
-        public async Task<List<ProviderRoute>> GetLoopsAsync(LoopIntent intent, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
         }
 
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
@@ -105,7 +98,7 @@ namespace Routing.Infrastructure.GraphHopper
             }
         }
 
-        // --- UPRAVENÁ METODA PRO VÝPOÈET TIMEOUTU ---
+        
         private static TimeSpan CalculateDynamicTimeout(Coordinate start, Coordinate end)
         {
             var straightLineMeters = GeoCalculator.CalculateDistance(start, end);
@@ -127,6 +120,76 @@ namespace Routing.Infrastructure.GraphHopper
             }
 
             return url;
+        }
+        
+        public async Task<List<ProviderRoute>> GetLoopsAsync(LoopIntent intent, CancellationToken cancellationToken)
+        {
+            var requestPayload = new GraphHopperRouteRequest
+            {
+                Points = new[]
+                {
+                    new[] { intent.Start.Longitude, intent.Start.Latitude } //for now we are sending only start point, in future we have to calculate start point in the radius not user's start point
+                },
+                Profile = GraphHopperProfileBuilder.ResolveProfileName(intent),
+                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(intent),
+                Elevation = _graphHopperOptions.Elevation,
+                Instructions = _graphHopperOptions.Instructions,
+                CalcPoints = _graphHopperOptions.CalcPoints,
+                PointsEncoded = _graphHopperOptions.PointsEncoded,
+                Details = _graphHopperOptions.RequestedDetails,
+                Algorithm = "round_trip",
+                ChDisable = true,
+                RoundTripDistance = (int)intent.PreferredLengthKm * 1000, 
+                RoundTripSeed = 2 
+            };
+
+            var dynamicTimeout = CalculateDynamicTimeoutForLoop(intent.PreferredLengthKm);
+            var response = await ExecuteLoopRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
+
+            if (response?.Paths is null)
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
+
+            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
+        }
+
+        private async Task<GraphHopperRouteResponse?> ExecuteLoopRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
+        {
+            var url = BuildUrl();
+
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, url)
+                {
+                    Content = JsonContent.Create(requestPayload, options: _jsonOptions)
+                };
+                request.Options.Set(DynamicTimeoutKey, dynamicTimeout);
+                var rawJson = await request.Content.ReadAsStringAsync();
+                using var response = await _httpClient.SendAsync(request, cancellationToken);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                    GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(response.StatusCode, responseBody);
+                }
+
+                return await response.Content.ReadFromJsonAsync<GraphHopperRouteResponse>(_jsonOptions, cancellationToken);
+            }
+            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper loop request timed out.", ex);
+            }
+            catch (HttpRequestException ex)
+            {
+                throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "GraphHopper is unreachable.", ex);
+            }
+        }
+
+        private static TimeSpan CalculateDynamicTimeoutForLoop(double distanceKm)
+        {
+            var timeoutSeconds = BaseTimeoutSeconds + (distanceKm / 10.0) * SecondsPerTenKm;
+            timeoutSeconds = Math.Min(timeoutSeconds, MaxTimeoutSeconds);
+
+            return TimeSpan.FromSeconds(timeoutSeconds);
         }
     }
 }
