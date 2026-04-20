@@ -18,9 +18,9 @@ namespace Routing.Application.Planning.Finders
 
         public async Task<Result<List<Trip>>> FindLoopsAsync(LoopIntent intent, UserRoutingProfile profile, CancellationToken ct)
         {
-            var goal = new LoopGoal();
             var settings = new PlannerSettings();
-            var plans = await _planner.PlanAsync(intent, goal, profile, settings, ct);
+
+            var plans = await _planner.PlanAsync(intent, profile, settings, ct);
 
             if (!plans.Any())
                 return Error.Validation("No loops found.");

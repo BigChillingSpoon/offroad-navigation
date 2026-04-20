@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Routing.Application.Planning.Candidates.Models
 {
-    public sealed record ScoredTripCandidate
+    public sealed record ScoredTripCandidate<TCandidate> where TCandidate : TripCandidate
     {
-        public required TripCandidate Candidate { get; init; }
+        public required TCandidate Candidate { get; init; }
         public required double Score { get; init; }
     }
 }

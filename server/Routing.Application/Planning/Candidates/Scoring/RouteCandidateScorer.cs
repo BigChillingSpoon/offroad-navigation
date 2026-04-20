@@ -5,7 +5,7 @@ using Routing.Domain.Enums;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
-    public sealed class RouteCandidateScorer : BaseTripCandidateScorer<RouteIntent>
+    public sealed class RouteCandidateScorer : BaseTripCandidateScorer<RouteIntent, TripCandidate>
     {
         private readonly IOptionsMonitor<ScoringProfiles> _options;
 

@@ -3,7 +3,7 @@ using Routing.Application.Planning.Intents;
 
 namespace Routing.Application.Planning.Goals
 {
-    public class RouteGoal : ITripGoal<RouteIntent>
+    public class RouteGoal : ITripGoal<RouteIntent, TripCandidate>
     {
         /// <summary>
         /// <remarks>

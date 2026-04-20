@@ -9,6 +9,7 @@ using Routing.Infrastructure.GraphHopper.Builders;
 using Routing.Application.Planning.Intents;
 using Routing.Domain.Utilities;
 using System.Net.Http.Json;
+using Routing.Domain.ValueObjects; // Pøidáno pro Coordinate
 
 namespace Routing.Infrastructure.GraphHopper
 {
@@ -33,6 +34,7 @@ namespace Routing.Infrastructure.GraphHopper
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
 
+        // --- PÙVODNÍ METODA PRO TRASY A->B ---
         public async Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken)
         {
             var requestPayload = new GraphHopperRouteRequest
@@ -56,13 +58,19 @@ namespace Routing.Infrastructure.GraphHopper
                 ChDisable = _graphHopperOptions.ChDisable
             };
 
-            var dynamicTimeout = CalculateDynamicTimeout(intent);
+            var dynamicTimeout = CalculateDynamicTimeout(intent.Start, intent.End);
             var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
 
             if (response?.Paths is null)
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
 
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
+        }
+
+        // --- NOVÁ METODA PRO OKRUHY (LOOP) ---
+        public async Task<List<ProviderRoute>> GetLoopsAsync(LoopIntent intent, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
         }
 
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
@@ -97,9 +105,10 @@ namespace Routing.Infrastructure.GraphHopper
             }
         }
 
-        private static TimeSpan CalculateDynamicTimeout(RouteIntent intent)
+        // --- UPRAVENÁ METODA PRO VÝPOÈET TIMEOUTU ---
+        private static TimeSpan CalculateDynamicTimeout(Coordinate start, Coordinate end)
         {
-            var straightLineMeters = GeoCalculator.CalculateDistance(intent.Start, intent.End);
+            var straightLineMeters = GeoCalculator.CalculateDistance(start, end);
             var straightLineKm = straightLineMeters / 1000.0;
 
             var timeoutSeconds = BaseTimeoutSeconds + (straightLineKm / 10.0) * SecondsPerTenKm;

@@ -10,6 +10,7 @@ using Routing.Domain.Exceptions;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using Routing.Application.Planning.Planner;
 
 namespace Routing.Application.Routes.Commands
 {
@@ -61,7 +62,6 @@ namespace Routing.Application.Routes.Commands
 
             var intent = request.ToRouteIntent();
             var profile = request.ToUserProfile();
-
             try
             {
                 var routeResult = await _routeFinder.FindRouteAsync(intent, profile, ct);

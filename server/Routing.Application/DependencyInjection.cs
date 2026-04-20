@@ -18,6 +18,9 @@ using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Candidates.Builders;
 using NetTopologySuite.Features;
 using NetTopologySuite.IO;
+using Routing.Application.Planning.Pipelines;
+using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Goals;
 
 namespace Routing.Domain
 {
@@ -37,14 +40,33 @@ namespace Routing.Domain
 
             // PLANNING
             services.AddScoped<ITripPlanner, TripPlanner>();
-            services.AddScoped<ITileSelector, TileSelector>();
+
+            //PIPELINES
+            services.AddScoped<IPlanningPipelineFactory, PlanningPipelineFactory>();
+            services.AddScoped<IPlanningPipeline<RouteIntent>, RoutePlanningPipeline>();
+            services.AddScoped<IPlanningPipeline<LoopIntent>, LoopPlanningPipeline>();
+
+            services.AddScoped<ITileSelector, TileSelector>();//ghost to be removed
+
+            //FINDERS
             services.AddScoped<ILoopFinder, LoopFinder>();
             services.AddScoped<IRouteFinder, RouteFinder>();
+
+            //CANDIDATES
             services.AddScoped<ITripCandidateGeneratorFactory, TripCandidateGeneratorFactory>();
-            services.AddScoped<ICandidateGenerator<RouteIntent>, RouteCandidateGenerator>();
+            services.AddScoped<ICandidateGenerator<RouteIntent, TripCandidate>, RouteCandidateGenerator>();
+            services.AddScoped<ICandidateGenerator<LoopIntent, LoopTripCandidate>, LoopCandidateGenerator>();
             services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();
-            services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
-            services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
+            services.AddScoped<ITripCandidateScorer<RouteIntent, TripCandidate>, RouteCandidateScorer>();
+            services.AddScoped<ITripCandidateScorer<LoopIntent, LoopTripCandidate>, LoopCandidateScorer>();
+            services.AddScoped<ICandidateFactory, TripCandidateFactory>();
+
+
+            //GOALS
+            services.AddScoped<ITripGoal<LoopIntent, LoopTripCandidate>, LoopGoal>();
+            services.AddScoped<ITripGoal<RouteIntent, TripCandidate>, RouteGoal>();
+
+            //BUILDERS
             services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
             
             // OPTIONS

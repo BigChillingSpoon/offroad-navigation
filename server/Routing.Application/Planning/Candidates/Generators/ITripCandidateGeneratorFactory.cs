@@ -1,4 +1,5 @@
-﻿using Routing.Application.Planning.Intents;
+﻿using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Intents;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,9 @@ namespace Routing.Application.Planning.Candidates.Generators
 {
     public interface ITripCandidateGeneratorFactory
     {
-        ICandidateGenerator<TIntent> Resolve<TIntent>() where TIntent : ITripIntent;
+        ICandidateGenerator<TIntent,TCandidate> Resolve<TIntent,TCandidate>() 
+            where TIntent : ITripIntent
+            where TCandidate : TripCandidate;
     }
 
     public sealed class TripCandidateGeneratorFactory : ITripCandidateGeneratorFactory
@@ -21,13 +24,15 @@ namespace Routing.Application.Planning.Candidates.Generators
             _provider = provider;
         }
 
-        public ICandidateGenerator<TIntent> Resolve<TIntent>() where TIntent : ITripIntent
+        public ICandidateGenerator<TIntent, TCandidate> Resolve<TIntent, TCandidate>() 
+            where TIntent : ITripIntent
+            where TCandidate : TripCandidate
         {
-            var generator = _provider.GetService(typeof(ICandidateGenerator<TIntent>));
+            var generator = _provider.GetService(typeof(ICandidateGenerator<TIntent, TCandidate>));
             if (generator is null)
                 throw new InvalidOperationException($"No candidate generator registered for {typeof(TIntent).Name}");
 
-            return (ICandidateGenerator<TIntent>)generator;
+            return (ICandidateGenerator<TIntent, TCandidate>)generator;
         }
     }
 }

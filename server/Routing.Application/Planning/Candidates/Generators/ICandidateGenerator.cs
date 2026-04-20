@@ -5,8 +5,10 @@ using Routing.Application.Planning.Profiles;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
-    public interface ICandidateGenerator<TIntent> where TIntent : ITripIntent
+    public interface ICandidateGenerator<in TIntent, TCandidate>
+        where TIntent : ITripIntent
+        where TCandidate : TripCandidate
     {
-        Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(TIntent intent, PlannerSettings settings, CancellationToken ct);
+        Task<IReadOnlyList<TCandidate>> GenerateCandidatesAsync(TIntent intent, PlannerSettings settings, CancellationToken ct);
     }
 }

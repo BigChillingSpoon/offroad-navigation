@@ -13,7 +13,7 @@ namespace Routing.Application.Planning.Candidates.Models
     /// Represents whole route/loop 
     /// Contains informations that are important for trip as whole, such as Distance, Duration, Elevation etc.
     /// </summary>
-    public sealed class TripCandidate
+    public class TripCandidate
     {
         public double TotalDistanceMeters { get; }
         public TimeSpan Duration { get; }
@@ -28,7 +28,7 @@ namespace Routing.Application.Planning.Candidates.Models
         public IReadOnlyList<Interval<RestrictionType>> RestrictedZones { get; }
         public IReadOnlyDictionary<string, object>? Metadata { get; init; }
 
-        private TripCandidate(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, IReadOnlyList<Interval<RestrictionType>> restrictedZones, EncodedPolyline polyline, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss, double maxGradientPercentage)
+        protected TripCandidate(IReadOnlyList<Segment> segments, IReadOnlyList<RoadBarrier> barriers, IReadOnlyList<Interval<RestrictionType>> restrictedZones, EncodedPolyline polyline, double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss, double maxGradientPercentage)
         {
             Segments = segments;
             Barriers = barriers;
@@ -48,7 +48,7 @@ namespace Routing.Application.Planning.Candidates.Models
             Validate(totalDistance, duration, offroadDistance, elevationGain, elevationLoss);
             return new TripCandidate(segments, barriers, restrictedZones, polyline, totalDistance, duration, offroadDistance, elevationGain, elevationLoss, maxGradientPercentage);
         }
-        private static void Validate(double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
+        protected static void Validate(double totalDistance, TimeSpan duration, double offroadDistance, double elevationGain, double elevationLoss)
         {
             if(offroadDistance < 0)
                throw new DomainException("Offroad distance cannot be negative");
