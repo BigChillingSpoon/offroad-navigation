@@ -12,38 +12,38 @@ using Routing.Domain.Utilities;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
-    public sealed class RouteCandidateGenerator : ICandidateGenerator<RouteIntent, TripCandidate>
+    public sealed class LoopCandidateGenerator : ICandidateGenerator<LoopIntent, LoopTripCandidate>
     {
         private readonly IRoutingProvider _routingProvider;
         private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
 
-        public RouteCandidateGenerator(IRoutingProvider routingProvider, IRestrictedZoneBuilder restrictedZoneBuilder)
+        public LoopCandidateGenerator(IRoutingProvider routingProvider, IRestrictedZoneBuilder restrictedZoneBuilder)
         {
             _routingProvider = routingProvider;
             _restrictedZoneBuilder = restrictedZoneBuilder;
         }
 
-        public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, CancellationToken ct)
+        public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
-            var routes = await _routingProvider.GetRoutesAsync(intent, ct);
+            var loops = await _routingProvider.GetLoopsAsync(intent, ct);
 
-            if (routes is null || !routes.Any())
-                return Array.Empty<TripCandidate>();
+            if (loops is null || !loops.Any())
+                return Array.Empty<LoopTripCandidate>();
 
             int index = 0;
-            var candidateTasks = routes.Select(route => MapToCandidateAsync(route, index++));
+            var candidateTasks = loops.Select(route => MapToCandidateAsync(route, index++));
 
-            TripCandidate[] candidates = await Task.WhenAll(candidateTasks);
+            LoopTripCandidate[] candidates = await Task.WhenAll(candidateTasks);
 
             return candidates.ToList();
         }
 
-        private async Task<TripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
+        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
             //index is only for debug, to be removed 
-            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_route_candidate_{index}.gpx");
+            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_loop_candidate_{index}.gpx");
 
             var maxEdgeIndex = geometry.Count - 1;
 
@@ -59,16 +59,12 @@ namespace Routing.Application.Planning.Candidates.Generators
 
             var maxGradient = GeoCalculator.CalculateMaxGradientPercentage(geometry);
 
-            return TripCandidate.Create(
-                segments,
-                barriers,
-                restrictedZones,
-                route.Polyline,
-                route.Distance,
-                route.Duration,
-                route.Ascend,
-                route.Descend,
-                maxGradient);
+            return LoopTripCandidate.Create(
+                segments, barriers, restrictedZones, route.Polyline,
+                    route.Distance, route.Duration, route.Ascend, route.Descend, maxGradient,
+                    hookCoordinate: default, // Placeholder
+                    hookPolylineIndex: default, // Placeholder
+                    estimatedTransitDistanceMeters: default); // Placeholder
         }
 
         //translate technical exception to domain specific one, so we can later on decide how to handle it based on category

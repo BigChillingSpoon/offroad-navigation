@@ -4,26 +4,28 @@ using Routing.Application.Contracts.Models;
 using Routing.Application.Contracts.Responses;
 using Routing.Application.Mappings;
 using Routing.Application.Planning.Exceptions;
-using Routing.Application.Planning.Finders;
 using Routing.Domain.Enums;
 using Routing.Domain.Exceptions;
 using Routing.Domain.Models;
 using Routing.Domain.Repositories;
 using Microsoft.Extensions.Logging;
+using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Intents;
+using Routing.Application.Planning.Pipelines;
 
 namespace Routing.Application.Loops.Commands
 {
     internal sealed class LoopsCommands : ILoopsCommands
     {
         private readonly ITripRepository _repository;
-        private readonly ILoopFinder _loopFinder;
+        private readonly IPlanningPipeline<LoopIntent, LoopTripCandidate> _planningPipeline;
         private readonly IValidator<FindLoopsRequest> _findValidator;
         private readonly ILogger<LoopsCommands> _logger;
 
-        public LoopsCommands(ITripRepository repository, ILoopFinder loopFinder, IValidator<FindLoopsRequest> findValidator, ILogger<LoopsCommands> logger)
+        public LoopsCommands(ITripRepository repository, IPlanningPipeline<LoopIntent, LoopTripCandidate> planningPipeline, IValidator<FindLoopsRequest> findValidator, ILogger<LoopsCommands> logger)
         {
             _repository = repository;
-            _loopFinder = loopFinder;
+            _planningPipeline = planningPipeline;
             _findValidator = findValidator;
             _logger = logger;
         }
@@ -61,11 +63,20 @@ namespace Routing.Application.Loops.Commands
 
             var intent = request.ToLoopIntent();
             var profile = request.ToUserProfile();
+
             try
             {
-                var loopsResult = await _loopFinder.FindLoopsAsync(intent, profile, ct);
-                return loopsResult.Bind<IReadOnlyList<TripResult>>(ls =>
-                    ls.Select(l => l.ToTripResult(intent)).ToList());
+                var plans = await _planningPipeline.PlanAsync(intent, profile, ct);
+
+                if (!plans.Any())
+                    return Error.Validation("No loops found.");
+
+                var tripResults = plans
+                    .Select(plan => Trip.Create("Test loop", TripType.Loop, plan))
+                    .Select(trip => trip.ToTripResult(intent))
+                    .ToList();
+
+                return tripResults;
             }
             catch (RoutingProviderException ex)
             {

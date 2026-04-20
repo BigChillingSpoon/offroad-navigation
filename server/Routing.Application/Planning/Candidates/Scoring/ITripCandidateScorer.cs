@@ -1,12 +1,13 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Planning.Planner;
 using Routing.Application.Planning.Profiles;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
-    public interface ITripCandidateScorer<TIntent> where TIntent : ITripIntent
+    public interface ITripCandidateScorer<in TIntent, TCandidate>
+        where TIntent : ITripIntent
+        where TCandidate : TripCandidate
     {
-        IReadOnlyList<ScoredTripCandidate> Score(IReadOnlyList<TripCandidate> candidates, TIntent intent, UserRoutingProfile profile, PlannerSettings settings);
+        IReadOnlyList<ScoredTripCandidate<TCandidate>> Score(IReadOnlyList<TCandidate> candidates, TIntent intent, UserRoutingProfile profile);
     }
 }

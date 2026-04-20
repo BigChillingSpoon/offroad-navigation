@@ -3,9 +3,6 @@ using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Routing.Application.Loops.Commands;
-using Routing.Application.Planning.Finders;
-using Routing.Application.Planning.Planner;
-using Routing.Application.Planning;
 using Routing.Application.Routes.Commands;
 using Routing.Application.Contracts;
 using Routing.Application.Routes;
@@ -16,8 +13,11 @@ using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Candidates.Builders;
-using NetTopologySuite.Features;
-using NetTopologySuite.IO;
+using Routing.Application.Planning.Pipelines;
+using Routing.Application.Planning.Candidates.Models;
+using Routing.Application.Planning.Goals;
+using Routing.Application.Planning.Mappings;
+using Routing.Application.Mappings;
 
 namespace Routing.Domain
 {
@@ -35,16 +35,21 @@ namespace Routing.Domain
             services.AddScoped<IRoutesQueries, RoutesQueries>();
             services.AddScoped<ILoopsQueries, LoopsQueries>();
 
-            // PLANNING
-            services.AddScoped<ITripPlanner, TripPlanner>();
-            services.AddScoped<ITileSelector, TileSelector>();
-            services.AddScoped<ILoopFinder, LoopFinder>();
-            services.AddScoped<IRouteFinder, RouteFinder>();
-            services.AddScoped<ITripCandidateGeneratorFactory, TripCandidateGeneratorFactory>();
-            services.AddScoped<ICandidateGenerator<RouteIntent>, RouteCandidateGenerator>();
-            services.AddScoped<ITripCandidateScorerFactory, TripCandidateScorerFactory>();
-            services.AddScoped<ITripCandidateScorer<RouteIntent>, RouteCandidateScorer>();
-            services.AddScoped<ITripCandidateScorer<LoopIntent>, LoopCandidateScorer>();
+            //PIPELINES
+            services.AddScoped(typeof(IPlanningPipeline<,>), typeof(PlanningPipeline<,>));
+
+            //CANDIDATES
+            services.AddScoped<ICandidateGenerator<RouteIntent, TripCandidate>, RouteCandidateGenerator>();
+            services.AddScoped<ICandidateGenerator<LoopIntent, LoopTripCandidate>, LoopCandidateGenerator>();
+            services.AddScoped<ITripCandidateScorer<RouteIntent, TripCandidate>, RouteCandidateScorer>();
+            services.AddScoped<ITripCandidateScorer<LoopIntent, LoopTripCandidate>, LoopCandidateScorer>();
+
+
+            //GOALS
+            services.AddScoped<ITripGoal<LoopIntent, LoopTripCandidate>, LoopGoal>();
+            services.AddScoped<ITripGoal<RouteIntent, TripCandidate>, RouteGoal>();
+
+            //BUILDERS
             services.AddScoped<IRestrictedZoneBuilder, RestrictedZoneBuilder>();
             
             // OPTIONS
@@ -53,6 +58,9 @@ namespace Routing.Domain
             // VALIDATION
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
+            // MAPPERS
+            services.AddScoped<ITripMapper<TripCandidate>,RouteTripMapper>();
+            services.AddScoped<ITripMapper<LoopTripCandidate>,LoopTripMapper>();
             return services;
         }
     }

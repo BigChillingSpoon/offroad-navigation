@@ -4,7 +4,7 @@ using Routing.Application.Planning.Intents;
 
 namespace Routing.Application.Planning.Candidates.Scoring
 {
-    public sealed class LoopCandidateScorer : BaseTripCandidateScorer<LoopIntent>
+    public sealed class LoopCandidateScorer : BaseTripCandidateScorer<LoopIntent, LoopTripCandidate>
     {
         private readonly IOptionsMonitor<ScoringProfiles> _options;
 
@@ -15,7 +15,7 @@ namespace Routing.Application.Planning.Candidates.Scoring
 
         protected override PenaltyWeights Weights => _options.CurrentValue.Loop;
 
-        protected override double ScoreCandidate(TripCandidate candidate, LoopIntent intent, IReadOnlyList<TripCandidate> allCandidates, PenaltyWeights weights)
+        protected override double ScoreCandidate(LoopTripCandidate candidate, LoopIntent intent, IReadOnlyList<LoopTripCandidate> allCandidates, PenaltyWeights weights)
         {
             var offroadScore = candidate.OffroadRatio * 100.0;
             var elevationPenalty = candidate.ElevationGainMeters * 0.01;

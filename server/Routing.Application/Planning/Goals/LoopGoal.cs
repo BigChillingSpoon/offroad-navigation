@@ -3,14 +3,15 @@ using Routing.Application.Planning.Intents;
 
 namespace Routing.Application.Planning.Goals
 {
-    public class LoopGoal : ITripGoal<LoopIntent>
+    public sealed class LoopGoal : ITripGoal<LoopIntent, LoopTripCandidate>
     {
-        public bool IsSatisfied(TripCandidate candidate, LoopIntent intent)
+        public bool IsSatisfied(LoopTripCandidate candidate, LoopIntent intent)
         {
+            //to be implemented
             return true;
         }
 
-        public double GetGoalScore(TripCandidate candidate, LoopIntent intent)
+        public double GetGoalScore(LoopTripCandidate candidate, LoopIntent intent)
         {
             return 0d;
         }
