@@ -3,8 +3,6 @@ using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Routing.Application.Loops.Commands;
-using Routing.Application.Planning.Finders;
-using Routing.Application.Planning;
 using Routing.Application.Routes.Commands;
 using Routing.Application.Contracts;
 using Routing.Application.Routes;
@@ -15,8 +13,6 @@ using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Candidates.Builders;
-using NetTopologySuite.Features;
-using NetTopologySuite.IO;
 using Routing.Application.Planning.Pipelines;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Goals;
@@ -41,10 +37,6 @@ namespace Routing.Domain
 
             //PIPELINES
             services.AddScoped(typeof(IPlanningPipeline<,>), typeof(PlanningPipeline<,>));
-
-            //FINDERS
-            services.AddScoped<ILoopFinder, LoopFinder>();
-            services.AddScoped<IRouteFinder, RouteFinder>();
 
             //CANDIDATES
             services.AddScoped<ICandidateGenerator<RouteIntent, TripCandidate>, RouteCandidateGenerator>();
