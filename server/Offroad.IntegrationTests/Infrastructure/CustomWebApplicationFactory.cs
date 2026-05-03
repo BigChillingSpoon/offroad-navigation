@@ -6,7 +6,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Http.Resilience;
-using Routing.Application.Abstractions;
+using Routing.Application.Ports;
 using Routing.Infrastructure.Data;
 using Routing.Infrastructure.Persistance; 
 using Testcontainers.PostgreSql;
