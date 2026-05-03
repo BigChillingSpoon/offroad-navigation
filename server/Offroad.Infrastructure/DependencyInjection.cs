@@ -3,7 +3,7 @@ using Microsoft.Extensions.Http.Resilience;
 using Routing.Domain.Repositories;
 using Routing.Infrastructure.GraphHopper;
 using Routing.Infrastructure.Repositories;
-using Routing.Application.Abstractions;
+using Routing.Application.Ports;
 using Microsoft.Extensions.Configuration;
 using Routing.Infrastructure.GraphHopper.JsonConverters;
 using System.Text.Json;

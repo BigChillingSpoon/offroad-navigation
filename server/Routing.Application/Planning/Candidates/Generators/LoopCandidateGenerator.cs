@@ -1,4 +1,4 @@
-﻿using Routing.Application.Abstractions;
+﻿using Routing.Application.Ports;
 using Routing.Domain.Enums;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
@@ -9,6 +9,11 @@ using Routing.Application.Planning.Candidates.Builders;
 using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
 using Routing.Domain.Utilities;
+using Routing.Application.Ports.Persistence;
+using Routing.Application.Planning.Skeletons.Services;
+using Routing.Application.Planning.Skeletons.Models;
+using Routing.Application.Ports.DTOs;
+using Routing.Domain.Models;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -16,33 +21,61 @@ namespace Routing.Application.Planning.Candidates.Generators
     {
         private readonly IRoutingProvider _routingProvider;
         private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
+        private readonly IHookpointRepository _hookpointRepository;
+        private readonly ILoopSkeletonFinder _skeletonFinder;
 
-        public LoopCandidateGenerator(IRoutingProvider routingProvider, IRestrictedZoneBuilder restrictedZoneBuilder)
+        public LoopCandidateGenerator(
+            IRoutingProvider routingProvider,
+            IRestrictedZoneBuilder restrictedZoneBuilder,
+            IHookpointRepository hookpointRepository,
+            ILoopSkeletonFinder skeletonFinder)
         {
             _routingProvider = routingProvider;
             _restrictedZoneBuilder = restrictedZoneBuilder;
+            _hookpointRepository = hookpointRepository;
+            _skeletonFinder = skeletonFinder;
         }
 
         public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
-            var loops = await _routingProvider.GetLoopsAsync(intent, ct);
+            var allHookpoints = await _hookpointRepository.GetHookpointsNearAsync(intent.Start, intent.PreferredLengthKm * 1000 / 2, ct);
 
-            if (loops is null || !loops.Any())
+            if (!allHookpoints.Any())
                 return Array.Empty<LoopTripCandidate>();
 
-            int index = 0;
-            var candidateTasks = loops.Select(route => MapToCandidateAsync(route, index++));
+            // For now, we use a single starting point. This will be expanded to use multiple entry points from Arenas.
+            var startHookpoints = new List<Hookpoint>
+            {
+                new(0, intent.Start, 0, 0) // Placeholder for a real start hookpoint
+            };
 
-            LoopTripCandidate[] candidates = await Task.WhenAll(candidateTasks);
+            // For each starting point, find all possible skeletons and flatten the result into a single list.
+            var allSkeletons = startHookpoints
+                .SelectMany(start => _skeletonFinder.FindSkeletons(start, allHookpoints, intent.PreferredLengthKm * 1000))
+                .Take(30) //constant for now, we need to estimate best ones in future here
+                .ToList();
 
-            return candidates.ToList();
+            if (!allSkeletons.Any())
+                return Array.Empty<LoopTripCandidate>();
+
+            var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, index, ct));
+
+            //at the moment we are returning all together that means we are waiting for all of them to finish, to be improved in future
+            return await Task.WhenAll(candidateTasks);
+        }
+
+        private async Task<LoopTripCandidate> GenerateSingleCandidateAsync(SkeletonCandidate skeleton, int index, CancellationToken ct)
+        {
+            var waypoints = skeleton.Hookpoints.Select(h => h.Location).ToList();
+            var providerRequest = new ProviderSkeletonRequest(waypoints);
+            var providerRoute = await _routingProvider.GetRouteFromSkeletonAsync(providerRequest, ct);
+            return await MapToCandidateAsync(providerRoute, index);
         }
 
         private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
-            //index is only for debug, to be removed 
             PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_loop_candidate_{index}.gpx");
 
             var maxEdgeIndex = geometry.Count - 1;
@@ -60,14 +93,13 @@ namespace Routing.Application.Planning.Candidates.Generators
             var maxGradient = GeoCalculator.CalculateMaxGradientPercentage(geometry);
 
             return LoopTripCandidate.Create(
-                segments, barriers, restrictedZones, route.Polyline,
+                    segments, barriers, restrictedZones, route.Polyline,
                     route.Distance, route.Duration, route.Ascend, route.Descend, maxGradient,
-                    hookCoordinate: default, // Placeholder
-                    hookPolylineIndex: default, // Placeholder
-                    estimatedTransitDistanceMeters: default); // Placeholder
+                    hookCoordinate: default,
+                    hookPolylineIndex: default,
+                    estimatedTransitDistanceMeters: default);
         }
 
-        //translate technical exception to domain specific one, so we can later on decide how to handle it based on category
         private IReadOnlyList<Coordinate> GetValidGeometry(EncodedPolyline polyline)
         {
             try

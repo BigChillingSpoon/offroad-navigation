@@ -1,4 +1,4 @@
-﻿using Routing.Application.Abstractions;
+﻿using Routing.Application.Ports;
 using Routing.Domain.Enums;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
@@ -27,7 +27,7 @@ namespace Routing.Application.Planning.Candidates.Generators
         {
             var routes = await _routingProvider.GetRoutesAsync(intent, ct);
 
-            if (routes is null || !routes.Any())
+            if (!routes.Any())
                 return Array.Empty<TripCandidate>();
 
             int index = 0;
