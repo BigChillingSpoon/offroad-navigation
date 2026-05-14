@@ -72,28 +72,6 @@ namespace Routing.Infrastructure
                     options.CircuitBreaker.BreakDuration = TimeSpan.FromSeconds(15);
                 });
 
-            //Repository
-            services.AddScoped<System.Data.IDbConnection>(sp =>
-            {
-                var cfg = sp.GetRequiredService<IConfiguration>();
-                var cs = cfg.GetConnectionString("DefaultConnection"); // unified name
-                var conn = new Npgsql.NpgsqlConnection(cs);
-                // Do NOT open here; let callers open or let Dapper open as needed.
-                return conn;
-            });
-
-            // Provide a factory Func<IDbConnection> that creates a new connection per call.
-            // Keep this transient so callers that expect a fresh connection (using `using`) get one.
-            services.AddTransient<Func<IDbConnection>>(sp =>
-            {
-                var cfg = sp.GetRequiredService<IConfiguration>();
-                var cs = cfg.GetConnectionString("DefaultConnection");
-                return () => new Npgsql.NpgsqlConnection(cs);
-            });
-
-            services.AddSingleton<ITripRepository, InMemoryTripRepository>();
-            services.AddScoped<IHookpointRepository, HookpointRepository>();
-
             //Json Options
             services.AddSingleton<JsonSerializerOptions>(_ =>
             {
@@ -126,6 +104,11 @@ namespace Routing.Infrastructure
             //GIS related
             services.AddScoped<GisDataSeeder>();
             services.AddScoped<IGisService, GisService>();
+
+            //Repositories
+            services.AddSingleton<ITripRepository, InMemoryTripRepository>();
+            services.AddScoped<IHookpointRepository, HookpointRepository>();
+
             return services;
         }
     }
