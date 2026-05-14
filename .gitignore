@@ -7,3 +7,5 @@
 **/*.csproj.user
 routing/graphhopper/data/
 /.claude
+/server/.idea
+/server/ai-context
