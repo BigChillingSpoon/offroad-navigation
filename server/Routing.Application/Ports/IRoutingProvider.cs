@@ -1,19 +1,14 @@
 ﻿using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
-using Routing.Application.Ports.DTOs;
+using Routing.Domain.ValueObjects;
 
 namespace Routing.Application.Ports
 {
     public interface IRoutingProvider
     {
+        //remove the whole intent and split it to multiple parameters, gh shouldn know about some shitty user's intents
         Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken);
 
-        /// <summary>
-        /// Generates a single, continuous route from an ordered list of coordinates (a skeleton).
-        /// </summary>
-        /// <param name="request">A DTO containing the waypoints and profile for the route.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A single ProviderRoute representing the complete loop.</returns>
-        Task<ProviderRoute> GetRouteFromSkeletonAsync(ProviderSkeletonRequest request, CancellationToken cancellationToken);
+        Task<ProviderRoute> GetRouteAsync(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> waypoints , CancellationToken cancellationToken);
     }
 }

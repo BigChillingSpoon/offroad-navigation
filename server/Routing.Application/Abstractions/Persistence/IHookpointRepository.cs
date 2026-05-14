@@ -1,7 +1,7 @@
 ﻿using Routing.Domain.Models;
 using Routing.Domain.ValueObjects;
 
-namespace Routing.Application.Ports.Persistence;
+namespace Routing.Application.Abstractions.Persistence;
 
 /// <summary>
 /// Defines the contract for accessing hookpoint data from the persistence layer.

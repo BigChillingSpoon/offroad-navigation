@@ -9,10 +9,9 @@ using Routing.Application.Planning.Candidates.Builders;
 using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
 using Routing.Domain.Utilities;
-using Routing.Application.Ports.Persistence;
+using Routing.Application.Abstractions.Persistence;
 using Routing.Application.Planning.Skeletons.Services;
 using Routing.Application.Planning.Skeletons.Models;
-using Routing.Application.Ports.DTOs;
 using Routing.Domain.Models;
 
 namespace Routing.Application.Planning.Candidates.Generators
@@ -38,40 +37,61 @@ namespace Routing.Application.Planning.Candidates.Generators
 
         public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
-            var allHookpoints = await _hookpointRepository.GetHookpointsNearAsync(intent.Start, intent.PreferredLengthKm * 1000 / 2, ct);
-
-            if (!allHookpoints.Any())
+            // 1. GET ALL SUITABLE OFFROAD ENTRANCES
+            var entrances = await GetMostSuitableEntrancesAsync(intent.Start, intent.MaxDriveDistanceKm, maxEntrances: 3, ct);
+            if (!entrances.Any())
                 return Array.Empty<LoopTripCandidate>();
 
-            // For now, we use a single starting point. This will be expanded to use multiple entry points from Arenas.
-            var startHookpoints = new List<Hookpoint>
-            {
-                new(0, intent.Start, 0, 0) // Placeholder for a real start hookpoint
-            };
+            // 2. PARALERLY GENERATE ALL ARENA SKELETONS
+            var arenaTasks = entrances.Select(entrance => ProcessArenaAsync(entrance, intent, ct));
+            var arenasResults = await Task.WhenAll(arenaTasks);
 
-            // For each starting point, find all possible skeletons and flatten the result into a single list.
-            var allSkeletons = startHookpoints
-                .SelectMany(start => _skeletonFinder.FindSkeletons(start, allHookpoints, intent.PreferredLengthKm * 1000))
-                .Take(30) //constant for now, we need to estimate best ones in future here
-                .ToList();
-
+            // 3. GATHER ALL SKELETONS TOGETHER
+            var allSkeletons = arenasResults.SelectMany(s => s).ToList();
             if (!allSkeletons.Any())
                 return Array.Empty<LoopTripCandidate>();
 
+            // 4. PARALLELY GENERATE CANDIDATES FOR ALL SKELETONS
             var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, index, ct));
+            var candidates = await Task.WhenAll(candidateTasks);
 
-            //at the moment we are returning all together that means we are waiting for all of them to finish, to be improved in future
-            return await Task.WhenAll(candidateTasks);
+            return candidates.Where(c => c is not null).ToList()!;
         }
 
-        private async Task<LoopTripCandidate> GenerateSingleCandidateAsync(SkeletonCandidate skeleton, int index, CancellationToken ct)
+        //clean
+        private async Task<LoopTripCandidate?> GenerateSingleCandidateAsync(LoopSkeleton skeleton, int index, CancellationToken ct)
         {
-            var waypoints = skeleton.Hookpoints.Select(h => h.Location).ToList();
-            var providerRequest = new ProviderSkeletonRequest(waypoints);
-            var providerRoute = await _routingProvider.GetRouteFromSkeletonAsync(providerRequest, ct);
+            var providerRoute = await _routingProvider.GetRouteAsync(skeleton.Entrance, skeleton.Entrance, skeleton.Waypoints, ct);
             return await MapToCandidateAsync(providerRoute, index);
         }
 
+        //clean
+        private async Task<IReadOnlyList<LoopSkeleton>> ProcessArenaAsync(Coordinate entrance, LoopIntent intent, CancellationToken ct)
+        {
+            var arenaHookpoints = await _hookpointRepository.GetHookpointsNearAsync(
+                entrance,
+                intent.PreferredLengthKm * 1000 / 2,
+                ct);
+
+            if (!arenaHookpoints.Any())
+                return Array.Empty<LoopSkeleton>();
+
+            //TODO modify after creation of final skeleton finder
+            var startHookpoint = new Hookpoint(entrance, 0, 0, false);
+
+            return _skeletonFinder.FindSkeletons(startHookpoint, arenaHookpoints, intent.PreferredLengthKm * 1000)
+                .Take(10)
+                .ToList();
+        }
+
+        //clean
+        private async Task<IReadOnlyList<Coordinate>> GetMostSuitableEntrancesAsync(Coordinate userStart, double maxDriveDistanceKm, int maxEntrances, CancellationToken ct)
+        {
+            // TODO: Create smart arena finder
+            return new List<Coordinate> { userStart };
+        }
+
+       
         private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);

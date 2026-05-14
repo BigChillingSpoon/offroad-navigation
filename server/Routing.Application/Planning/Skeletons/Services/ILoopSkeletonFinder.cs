@@ -16,7 +16,7 @@ public interface ILoopSkeletonFinder
     /// <param name="allHookpointsInArea">The complete list of hookpoints in the search area, including the start point.</param>
     /// <param name="targetLoopDistanceMeters">The desired total loop distance in meters.</param>
     /// <returns>A list of valid SkeletonCandidates. Returns an empty list if no valid skeletons can be found.</returns>
-    IReadOnlyList<SkeletonCandidate> FindSkeletons(
+    IReadOnlyList<LoopSkeleton> FindSkeletons(
         Hookpoint startHookpoint,
         IReadOnlyList<Hookpoint> allHookpointsInArea,
         double targetLoopDistanceMeters);

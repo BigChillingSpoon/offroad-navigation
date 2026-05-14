@@ -5,12 +5,12 @@ namespace Routing.Application.Planning.Skeletons.Services;
 
 public sealed class LoopSkeletonFinder : ILoopSkeletonFinder
 {
-    public IReadOnlyList<SkeletonCandidate> FindSkeletons(
+    public IReadOnlyList<LoopSkeleton> FindSkeletons(
         Hookpoint startHookpoint,
         IReadOnlyList<Hookpoint> allHookpointsInArea,
         double targetLoopDistanceMeters)
     {
-        var validSkeletons = new List<SkeletonCandidate>();
+        var validSkeletons = new List<LoopSkeleton>();
         var initialVectorChain = new List<SkeletonVector>();
 
         // Start the recursive search
@@ -24,7 +24,7 @@ public sealed class LoopSkeletonFinder : ILoopSkeletonFinder
         List<SkeletonVector> currentVectorChain,
         IReadOnlyList<Hookpoint> remainingHookpoints,
         double targetLoopDistanceMeters,
-        List<SkeletonCandidate> completedSkeletons)
+        List<LoopSkeleton> completedSkeletons)
     {
         // TODO: Implement the full Constrained Depth-First Search (DFS) algorithm here.
         // This method will be recursive and will build the 'currentVectorChain'.
