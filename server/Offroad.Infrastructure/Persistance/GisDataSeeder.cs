@@ -22,7 +22,7 @@ public class GisDataSeeder
             return;
 
         if (!File.Exists(geoJsonFilePath))
-            throw new FileNotFoundException($"GeoJSON soubor nenalezen: {geoJsonFilePath}");
+            throw new FileNotFoundException($"GeoJSON file not found: {geoJsonFilePath}");
 
         var batchSize = 10000; 
         var batch = new List<GeoZone>();

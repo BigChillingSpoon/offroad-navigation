@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <Folder Include="Planning\Planner\" />
+    <Folder Include="Ports\DTOs\" />
   </ItemGroup>
 
 </Project>

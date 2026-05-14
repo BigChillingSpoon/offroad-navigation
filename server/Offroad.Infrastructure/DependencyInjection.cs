@@ -1,17 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
-using Routing.Domain.Repositories;
-using Routing.Infrastructure.GraphHopper;
-using Routing.Infrastructure.Repositories;
-using Routing.Application.Ports;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Routing.Infrastructure.GraphHopper.JsonConverters;
-using System.Text.Json;
-using Routing.Infrastructure.GraphHopper.Mappings;
-using Microsoft.EntityFrameworkCore;
-using Routing.Infrastructure.Data;
-using Routing.Infrastructure.Persistance;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http.Resilience;
+using Routing.Application.Abstractions.Persistence;
 using Routing.Application.Contracts;
+using Routing.Application.Ports;
+using Routing.Domain.Repositories;
+using Routing.Infrastructure.Data;
+using Routing.Infrastructure.GraphHopper;
+using Routing.Infrastructure.GraphHopper.JsonConverters;
+using Routing.Infrastructure.GraphHopper.Mappings;
+using Routing.Infrastructure.Persistance;
+using Routing.Infrastructure.Persistence.Repositories;
+using Routing.Infrastructure.Repositories;
+using System.Data;
+using System.Text.Json;
 
 namespace Routing.Infrastructure
 {
@@ -70,7 +73,26 @@ namespace Routing.Infrastructure
                 });
 
             //Repository
+            services.AddScoped<System.Data.IDbConnection>(sp =>
+            {
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var cs = cfg.GetConnectionString("DefaultConnection"); // unified name
+                var conn = new Npgsql.NpgsqlConnection(cs);
+                // Do NOT open here; let callers open or let Dapper open as needed.
+                return conn;
+            });
+
+            // Provide a factory Func<IDbConnection> that creates a new connection per call.
+            // Keep this transient so callers that expect a fresh connection (using `using`) get one.
+            services.AddTransient<Func<IDbConnection>>(sp =>
+            {
+                var cfg = sp.GetRequiredService<IConfiguration>();
+                var cs = cfg.GetConnectionString("DefaultConnection");
+                return () => new Npgsql.NpgsqlConnection(cs);
+            });
+
             services.AddSingleton<ITripRepository, InMemoryTripRepository>();
+            services.AddScoped<IHookpointRepository, HookpointRepository>();
 
             //Json Options
             services.AddSingleton<JsonSerializerOptions>(_ =>

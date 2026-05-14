@@ -9,8 +9,7 @@ using Routing.Infrastructure.GraphHopper.Builders;
 using Routing.Application.Planning.Intents;
 using Routing.Domain.Utilities;
 using System.Net.Http.Json;
-using Routing.Application.Ports.DTOs;
-using Routing.Domain.ValueObjects; // P�id�no pro Coordinate
+using Routing.Domain.ValueObjects; 
 
 namespace Routing.Infrastructure.GraphHopper
 {
@@ -67,7 +66,7 @@ namespace Routing.Infrastructure.GraphHopper
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
         }
 
-        public Task<ProviderRoute> GetRouteFromSkeletonAsync(ProviderSkeletonRequest request, CancellationToken cancellationToken)
+        public Task<ProviderRoute> GetRouteAsync(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> waypoints, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

@@ -10,7 +10,8 @@ namespace Routing.Domain.Models;
 /// <param name="Passages">Represents 'pocet_prujezdu', indicating the popularity or number of traversals, used for sorting.</param>
 /// <param name="GradesMask">A bitmask representing the available track difficulty grades (1-5) at this point.</param>
 public record Hookpoint(
-    int Id,
     Coordinate Location,
     int Passages,
-    int GradesMask);
+    int GradesMask,
+    bool IsStrictlyInForest);
+

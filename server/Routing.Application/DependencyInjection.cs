@@ -18,6 +18,7 @@ using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Mappings;
 using Routing.Application.Mappings;
+using Routing.Application.Planning.Skeletons.Services;
 
 namespace Routing.Domain
 {
@@ -61,6 +62,9 @@ namespace Routing.Domain
             // MAPPERS
             services.AddScoped<ITripMapper<TripCandidate>,RouteTripMapper>();
             services.AddScoped<ITripMapper<LoopTripCandidate>,LoopTripMapper>();
+
+            //LOOP FINDERS
+            services.AddScoped<ILoopSkeletonFinder, LoopSkeletonFinder>();
             return services;
         }
     }
