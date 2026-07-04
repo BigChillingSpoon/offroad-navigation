@@ -89,11 +89,17 @@ namespace Routing.Infrastructure
             services.AddSingleton<GraphHopperResponseMapper>();
 
             //DB CONTEXT
-            services.AddDbContext<ApplicationDbContext>(options =>
+            // Factory so parallel candidate generation can mint one fresh
+            services.AddDbContextFactory<ApplicationDbContext>(options =>
                 options.UseNpgsql(
-                    configuration.GetConnectionString("DefaultConnection"), 
+                    configuration.GetConnectionString("DefaultConnection"),
                     x => x.UseNetTopologySuite()
                 ));
+
+            // Keep a scoped ApplicationDbContext for single-threaded consumers
+            // (GisDataSeeder, migrations) that inject the context directly.
+            services.AddScoped<ApplicationDbContext>(sp =>
+                sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
             //GIS related
             services.AddScoped<GisDataSeeder>();
