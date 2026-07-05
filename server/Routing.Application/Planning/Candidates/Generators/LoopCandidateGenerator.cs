@@ -13,6 +13,7 @@ using Routing.Application.Abstractions.Persistence;
 using Routing.Application.Planning.Skeletons.Services;
 using Routing.Application.Planning.Skeletons.Models;
 using Routing.Domain.Models;
+using Offroad.Routing.Application.Abstractions.Persistence;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -80,7 +81,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             var startHookpoint = new Hookpoint(entrance, 0, 0, false);
 
             return _skeletonFinder.FindSkeletons(startHookpoint, arenaHookpoints, intent.PreferredLengthKm * 1000)
-                .Take(10)
+                .Take(5)
                 .ToList();
         }
 

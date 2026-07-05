@@ -66,9 +66,54 @@ namespace Routing.Infrastructure.GraphHopper
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
         }
 
-        public Task<ProviderRoute> GetRouteAsync(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> waypoints, CancellationToken cancellationToken)
+        public async Task<ProviderRoute> GetRouteAsync(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> waypoints, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            // 1. Poskládání bodù pro okruh: Start -> Waypointy -> zpìt Start
+            var pointsList = new List<double[]>
+            {
+                new[] { start.Longitude, start.Latitude }
+            };
+
+            if (waypoints != null && waypoints.Any())
+            {
+                foreach (var wp in waypoints)
+                {
+                    pointsList.Add(new[] { wp.Longitude, wp.Latitude });
+                }
+            }
+
+            // Uzavøení smyèky pøidáním startovního bodu na konec
+            pointsList.Add(new[] { start.Longitude, start.Latitude });
+
+            var requestPayload = new GraphHopperRouteRequest
+            {
+                Points = pointsList.ToArray(),
+                Profile = "offroad_hardcore",
+                Elevation = _graphHopperOptions.Elevation,
+                Instructions = _graphHopperOptions.Instructions,
+                CalcPoints = _graphHopperOptions.CalcPoints,
+                PointsEncoded = _graphHopperOptions.PointsEncoded,
+                Details = _graphHopperOptions.RequestedDetails,
+                Algorithm = _graphHopperOptions.Algorithm,
+                AlternativeRouteMaxPaths = _graphHopperOptions.AlternativeRouteMaxPaths,
+                AlternativeRouteMaxShareFactor = _graphHopperOptions.AlternativeRouteMaxShareFactor,
+                AlternativeRouteMaxWeightFactor = _graphHopperOptions.AlternativeRouteMaxWeightFactor,
+                ChDisable = _graphHopperOptions.ChDisable
+            };
+
+            // 2. Oprava bugu: 'intent' zde neexistuje. 
+            // Pro timeout použijeme start a první waypoint (nebo opìt start, pokud waypointy nejsou).
+            var referencePointForTimeout = waypoints?.FirstOrDefault() ?? start;
+            var dynamicTimeout = CalculateDynamicTimeout(start, referencePointForTimeout);
+
+            var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
+
+            if (response?.Paths is null || !response.Paths.Any())
+                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
+
+            // 3. Oprava návratového typu: Metoda vrací jeden Task<ProviderRoute>, 
+            // proto bereme .First() a ne .ToList()
+            return _graphHopperResponseMapper.ToProviderRoute(response.Paths.First());
         }
 
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
