@@ -7,4 +7,4 @@
 **/*.csproj.user
 routing/graphhopper/data/
 /.claude
-/.idea
+/server/.idea
