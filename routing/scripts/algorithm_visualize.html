@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <title>Offroad DFS Vortex Simulator</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #f0f0f0; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .panel { background: #2d2d2d; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 20px; width: 800px; display: flex; flex-wrap: wrap; gap: 15px; align-items: center; justify-content: space-between; box-sizing: border-box; }
+        .control-group { display: flex; align-items: center; gap: 10px; }
+        button { background: #007acc; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: #005999; }
+        button:disabled { background: #555; cursor: not-allowed; color: #888; }
+        input[type="range"] { cursor: pointer; }
+        canvas { background: #121212; border: 1px solid #444; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .stats { width: 100%; display: flex; justify-content: space-between; font-size: 14px; color: #aaa; margin-top: 10px; padding-top: 10px; border-top: 1px solid #444; }
+        .stat-val { color: #4CAF50; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="panel">
+        <div class="control-group">
+            <label for="targetDist">Target (T): <span id="tLabel" class="stat-val">1000</span> px</label>
+            <input type="range" id="targetDist" min="600" max="1500" step="50" value="1000">
+        </div>
+        <div class="control-group">
+            <button id="btnNext">Krok vpřed (Next Step)</button>
+            <button id="btnRestart">Restart Simulace</button>
+        </div>
+        <div class="stats">
+            <span>D_accum: <span id="dAccumLabel" class="stat-val">0</span> px</span>
+            <span>T_rem: <span id="tRemLabel" class="stat-val">1000</span> px</span>
+            <span>Faktor (R): <span id="rLabel" class="stat-val">0.00</span></span>
+            <span>Status: <span id="statusLabel" style="color: #03A9F4;">Start</span></span>
+        </div>
+    </div>
+
+    <canvas id="mapCanvas" width="800" height="600"></canvas>
+
+    <script>
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // UI Elementy
+        const targetSlider = document.getElementById('targetDist');
+        const btnNext = document.getElementById('btnNext');
+        const btnRestart = document.getElementById('btnRestart');
+        const labels = {
+            t: document.getElementById('tLabel'),
+            dAccum: document.getElementById('dAccumLabel'),
+            tRem: document.getElementById('tRemLabel'),
+            R: document.getElementById('rLabel'),
+            status: document.getElementById('statusLabel')
+        };
+
+        // Konstanty algoritmu
+        const CIRCUITY_FACTOR = 1.55;
+        const S = { x: 400, y: 300 }; // Střed plátna (Start)
+        
+        // Stav simulace
+        let points = [];
+        let path = [];
+        let dAccum = 0;
+        let polarity = 1; // 1 (Pravotočivý) nebo -1 (Levotočivý)
+        let isFinished = false;
+
+        // Pomocné matematické funkce
+        const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+        const getAngle = (from, to) => Math.atan2(to.y - from.y, to.x - from.x);
+        
+        // Generování lesa (Křižovatek)
+        function generateForest() {
+            points = [];
+            for(let i = 0; i < 100; i++) {
+                points.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    score: 0.1 + Math.random() * 0.9 // P_weight
+                });
+            }
+        }
+
+        // Kreslení jedné iterace
+        function drawState() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const T = parseInt(targetSlider.value);
+            const Wn = path[path.length - 1];
+            const distHome = dist(Wn, S);
+            const Trem = T - (dAccum * CIRCUITY_FACTOR);
+            const R = (dAccum * CIRCUITY_FACTOR) / T;
+
+            // 1. Svatá kružnice (hS) - max dosah od startu
+            ctx.beginPath();
+            ctx.arc(S.x, S.y, T / 2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            // Kreslení všech bodů
+            points.forEach(p => {
+                ctx.fillStyle = `rgba(150, 150, 150, ${p.score * 0.5})`;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Pokud jsme dojeli, vykreslíme jen trasu a končíme
+            if (isFinished) {
+                drawPath();
+                return;
+            }
+
+            // 2. Ohradníky aktuálního skoku (Min / Max Jump)
+            const maxJump = path.length === 1 ? T/5 : Math.min(T/5, distHome);
+            const minJump = path.length === 1 ? 20 : Math.min(30, distHome/2);
+
+            ctx.beginPath();
+            ctx.arc(Wn.x, Wn.y, maxJump, 0, Math.PI * 2);
+            ctx.arc(Wn.x, Wn.y, minJump, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.05)';
+            ctx.fill('evenodd');
+            ctx.strokeStyle = 'rgba(76, 175, 80, 0.3)';
+            ctx.stroke();
+
+            // 3. Elipsa Paliva (h)
+            if (Trem > 0 && path.length > 1) {
+                const stringLen = Trem / CIRCUITY_FACTOR;
+                const c = distHome;
+                if (stringLen > c) {
+                    const a = stringLen / 2;
+                    const b = Math.sqrt(a*a - (c/2)*(c/2));
+                    const cx = (S.x + Wn.x) / 2;
+                    const cy = (S.y + Wn.y) / 2;
+                    const rotation = getAngle(S, Wn);
+
+                    ctx.beginPath();
+                    ctx.ellipse(cx, cy, a, b, rotation, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(244, 67, 54, 0.4)';
+                    ctx.setLineDash([5, 5]);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // 4. Projektil (Vektorový Vír)
+            let projAngle = null;
+            if (path.length > 1) {
+                const angleFromHome = getAngle(S, Wn);
+                const theta = R * Math.PI; // R * 180 stupňů v radiánech
+                projAngle = angleFromHome + (theta * polarity);
+
+                ctx.beginPath();
+                ctx.moveTo(Wn.x, Wn.y);
+                ctx.lineTo(Wn.x + Math.cos(projAngle)*60, Wn.y + Math.sin(projAngle)*60);
+                ctx.strokeStyle = '#03A9F4';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            drawPath();
+        }
+
+        function drawPath() {
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for(let i=1; i<path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            ctx.strokeStyle = '#FFEB3B';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Start bod
+            ctx.fillStyle = '#F44336';
+            ctx.beginPath(); ctx.arc(S.x, S.y, 6, 0, Math.PI*2); ctx.fill();
+
+            // Aktuální bod
+            const Wn = path[path.length-1];
+            ctx.fillStyle = '#4CAF50';
+            ctx.beginPath(); ctx.arc(Wn.x, Wn.y, 5, 0, Math.PI*2); ctx.fill();
+        }
+
+        // HLAVNÍ LOGIKA KROKU (Zde můžeš ladit matematiku)
+        function executeStep() {
+            if (isFinished) return;
+
+            const T = parseInt(targetSlider.value);
+            const Wn = path[path.length - 1];
+            const distHome = dist(Wn, S);
+            const Trem = T - (dAccum * CIRCUITY_FACTOR);
+            const R = (dAccum * CIRCUITY_FACTOR) / T;
+
+            // Zavírací podmínka (Návrat domů)
+            if (path.length > 2 && distHome < (T/5) && R > 0.5) {
+                path.push(S);
+                dAccum += distHome;
+                isFinished = true;
+                labels.status.innerText = "Dokončeno! (Návrat do S)";
+                labels.status.style.color = "#4CAF50";
+                btnNext.disabled = true;
+                updateLabels();
+                drawState();
+                return;
+            }
+
+            const maxJump = path.length === 1 ? T/5 : Math.min(T/5, distHome);
+            const minJump = path.length === 1 ? 20 : Math.min(30, distHome/2);
+            const stringLen = Trem / CIRCUITY_FACTOR;
+
+            let bestPoint = null;
+            let bestScore = -Infinity;
+
+            // Výpočet úhlu projektilu pro aktuální krok
+            let projAngle = null;
+            let arrivalAngle = null;
+            
+            if (path.length > 1) {
+                projAngle = getAngle(S, Wn) + (R * Math.PI * polarity);
+                arrivalAngle = getAngle(path[path.length-2], Wn); // Odkud jsme přijeli
+            }
+
+            for (let p of points) {
+                if (path.includes(p)) continue; // Nechceme couvat na stejný bod
+
+                const dWn = dist(Wn, p);
+                
+                // 1. Zelená zóna (Min/Max skok)
+                if (dWn < minJump || dWn > maxJump) continue;
+                
+                // 2. Svatá kružnice
+                if (dist(S, p) > T/2) continue;
+
+                // 3. Elipsa zbytkového paliva
+                if (path.length > 1 && (dWn + dist(p, S)) > stringLen) continue;
+
+                let finalScore = p.score;
+
+                if (path.length === 1) {
+                    // První skok ze startu - vybíráme jen podle P_weight a určujeme Vír
+                    if (finalScore > bestScore) {
+                        bestScore = finalScore;
+                        bestPoint = p;
+                    }
+                } else {
+                    // Strojovna (2. až N-tý skok)
+                    const angleToP = getAngle(Wn, p);
+                    
+                    // U-Turn prevence (nesmíme se otočit o více jak 135 stupňů vůči příjezdu)
+                    let uTurnDiff = Math.abs(angleToP - arrivalAngle);
+                    if (uTurnDiff > Math.PI) uTurnDiff = (2 * Math.PI) - uTurnDiff;
+                    if (uTurnDiff > Math.PI * 0.75) continue; // 135 stupňů v radiánech
+
+                    // Úhlová odchylka od Projektilu
+                    let diff = Math.abs(angleToP - projAngle);
+                    if (diff > Math.PI) diff = (2 * Math.PI) - diff;
+
+                    // Pokud je bod více než 90 st. od projektilu, zahoď ho
+                    if (diff > Math.PI / 2) continue;
+
+                    // Cenová funkce: Kombinace P_weight a úhlové přesnosti
+                    const anglePenalty = 1 - (diff / (Math.PI / 2));
+                    finalScore = p.score * anglePenalty;
+
+                    if (finalScore > bestScore) {
+                        bestScore = finalScore;
+                        bestPoint = p;
+                    }
+                }
+            }
+
+            if (bestPoint) {
+                // Pokud to byl první skok, určíme polaritu
+                if (path.length === 1) {
+                    const angle = getAngle(S, bestPoint);
+                    // Pro jednoduchost určujeme polaritu podle toho, do kterého kvadrantu jsme skočili
+                    polarity = (angle > -Math.PI/2 && angle < Math.PI/2) ? 1 : -1;
+                }
+
+                dAccum += dist(Wn, bestPoint);
+                path.push(bestPoint);
+                labels.status.innerText = "Hledání...";
+            } else {
+                isFinished = true;
+                labels.status.innerText = "Slepá ulička (Dead End)!";
+                labels.status.style.color = "#F44336";
+                btnNext.disabled = true;
+            }
+
+            updateLabels();
+            drawState();
+        }
+
+        function updateLabels() {
+            labels.t.innerText = targetSlider.value;
+            labels.dAccum.innerText = Math.round(dAccum);
+            labels.tRem.innerText = Math.max(0, Math.round(parseInt(targetSlider.value) - dAccum * CIRCUITY_FACTOR));
+            labels.R.innerText = ((dAccum * CIRCUITY_FACTOR) / parseInt(targetSlider.value)).toFixed(2);
+        }
+
+        function restart() {
+            generateForest();
+            path = [{ x: S.x, y: S.y }];
+            dAccum = 0;
+            isFinished = false;
+            btnNext.disabled = false;
+            labels.status.innerText = "Start";
+            labels.status.style.color = "#03A9F4";
+            updateLabels();
+            drawState();
+        }
+
+        // Event Listenery
+        btnNext.addEventListener('click', executeStep);
+        btnRestart.addEventListener('click', restart);
+        targetSlider.addEventListener('input', () => { updateLabels(); drawState(); });
+
+        // Inicializace
+        restart();
+    </script>
+</body>
+</html>
