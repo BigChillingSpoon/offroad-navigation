@@ -39,7 +39,7 @@ public class ApplicationDbContext : DbContext
                   .HasColumnType("geography(Point, 4326)");
 
             entity.Property(e => e.PocetPrujezdu)
-                  .HasColumnName("pocet_prujezdu");//todo rename
+                  .HasColumnName("connected_paths_count");
 
             entity.Property(e => e.GradesMask)
                   .HasColumnName("grades_mask");
