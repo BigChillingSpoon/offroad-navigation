@@ -16,17 +16,17 @@ RAW_PBF="../../graphhopper/data/czech-republic-latest.osm.pbf"
 FILTERED_PBF="../../graphhopper/data/filtered.osm.pbf"
 LUA_SCRIPT="import_rules.lua"
 ELEVATION_ZIPS_DIR="../../graphhopper/data/srtm"
+BACKUP_DIR="../../graphhopper/data/backups"
 
 echo "========================================================"
 echo "STARTING 3D TOPOLOGY PIPELINE (GIS SCHEME)..."
 echo "========================================================"
-if false; then
-echo "Step 1/6: Extracting and Filtering OSM Data..."
+echo "Step 1/7: Extracting and Filtering OSM Data..."
 osmium tags-filter $RAW_PBF \
     nwr/highway nwr/barrier nwr/boundary=national_park nwr/boundary=protected_area nwr/leisure=nature_reserve nwr/landuse=forest nwr/landuse=meadow \
     -o $FILTERED_PBF --overwrite
 
-echo "Step 2/6: Creating Schemas & Wiping Old Data..."
+echo "Step 2/7: Creating Schemas & Wiping Old Data..."
 psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
 
     -- 0. TURN ON THE SPATIAL AND ROUTING ENGINES
@@ -59,7 +59,7 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
         surface text,
         has_no_entry boolean DEFAULT false,
         tracktype text,
-        highway text,s
+        highway text,
         is_offroad boolean,
         has_barrier boolean DEFAULT false,
         is_restricted boolean DEFAULT false,
@@ -86,7 +86,7 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
 EOF
 osm2pgsql -d $DB_NAME -H $DB_HOST -P $DB_PORT -U $DB_USER -O flex -S $LUA_SCRIPT $FILTERED_PBF
 
-echo "Step 3/6: Noding & Business Logic Infection..."
+echo "Step 3/7: Noding & Business Logic Infection..."
 psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
 
     -- A. MATHEMATICAL NODING
@@ -135,19 +135,20 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     ANALYZE gis.geometric_zones;
     
     -- C. THE INFECTION RULES
-    WITH infected_nodes AS (
-        SELECT n.node_id FROM gis.nodes n
-        JOIN staging.barrier_nodes b ON ST_DWithin(n.geom, b.geom, 0.00001)
-    )
+    -- Checked against the edge's full linestring (e.geom), not just its
+    -- endpoint nodes - a barrier is typically a shared vertex somewhere along
+    -- the way's interior, not necessarily at an intersection/topology node,
+    -- so a node-only check misses most real barriers regardless of tolerance.
     UPDATE gis.edges e SET has_barrier = TRUE
-    WHERE source_node IN (SELECT node_id FROM infected_nodes) OR target_node IN (SELECT node_id FROM infected_nodes);
+    FROM staging.barrier_nodes b
+    WHERE ST_DWithin(e.geom, b.geom, 0.00001);
 
     UPDATE gis.edges e SET is_restricted = TRUE
     FROM gis.geometric_zones z
     WHERE z.zone_type = 2 AND ST_Intersects(e.geom, z.geom);
 EOF
 
-echo " Step 4/6: The Great Topological Optimizer (DEBUG MODE)..."
+echo " Step 4/7: The Great Topological Optimizer (DEBUG MODE)..."
 psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     -- Create the permanent debug log table
     DROP TABLE IF EXISTS gis.debug_log;
@@ -270,13 +271,16 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     END $$;
 
     -- Phase 3: Garbage Collect Orphan Nodes
-    DELETE FROM gis.nodes
-    WHERE node_id NOT IN (SELECT source_node FROM gis.edges)
-      AND node_id NOT IN (SELECT target_node FROM gis.edges);
+    -- NOT IN is not null-safe (source_node/target_node are nullable), so Postgres
+    -- can't prove a hash anti join is safe here and falls back to a per-row linear
+    -- re-scan of both subqueries - catastrophically slow at country scale.
+    -- NOT EXISTS has no such restriction and gets planned as a cheap Hash Anti Join.
+    DELETE FROM gis.nodes n
+    WHERE NOT EXISTS (SELECT 1 FROM gis.edges e WHERE e.source_node = n.node_id)
+      AND NOT EXISTS (SELECT 1 FROM gis.edges e WHERE e.target_node = n.node_id);
 EOF
-fi
 
-echo "Step 5/6: Unzipping and Importing SRTM Elevation Data..."
+echo "Step 5/7: Unzipping and Importing SRTM Elevation Data..."
 
 # 1. Create a secure, temporary directory in Linux
 TEMP_HGT_DIR=$(mktemp -d)
@@ -318,7 +322,7 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME -c "ANAL
 echo " -> Deleting unzipped temporary files..."
 rm -rf "$TEMP_HGT_DIR"
 
-echo "Step 6/6: 3D Elevation Gain & Heatmap Generation..."
+echo "Step 6/7: 3D Elevation Gain & Heatmap Generation..."
 psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     -- A. ELEVATION GAIN
     ALTER TABLE gis.nodes ADD COLUMN IF NOT EXISTS altitude real;
@@ -370,14 +374,29 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
         -- index-accelerated bounding-box pre-filter (0.001 deg is a safe
         -- upper bound for 50m at CZ latitudes); ST_DWithin still makes the
         -- exact geodesic decision, so results are unchanged.
-        JOIN staging.raw_lines r ON n.geom && ST_Expand(r.geom, 0.001)
+        -- ST_Expand must wrap the outer/search geometry (n.geom), not r.geom -
+        -- expanding the indexed inner column makes the condition non-sargable
+        -- and the planner falls back to scanning every filtered raw_lines row
+        -- per candidate node instead of using raw_lines_geom_idx.
+        JOIN staging.raw_lines r ON r.geom && ST_Expand(n.geom, 0.001)
                                  AND ST_DWithin(n.geom::geography, r.geom::geography, 50)
         WHERE r.surface IN ('asphalt', 'paved', 'concrete')
            OR r.highway IN ('primary', 'secondary', 'tertiary', 'residential')
     )
-    UPDATE gis.nodes SET is_entry_point = TRUE 
+    UPDATE gis.nodes SET is_entry_point = TRUE
     WHERE node_id IN (SELECT node_id FROM valid_trailheads);
 EOF
+
+echo "Step 7/7: Backing Up Database..."
+# This lives on the host filesystem, outside the Docker volume, so it survives
+# a "docker compose down -v" (which deletes the pgdata volume completely -
+# that's what wiped this database the last time and cost hours to rebuild).
+mkdir -p "$BACKUP_DIR"
+BACKUP_FILE="$BACKUP_DIR/offroad_$(date +%Y%m%d_%H%M%S).dump"
+pg_dump -h $DB_HOST -p $DB_PORT -U $DB_USER -Fc -f "$BACKUP_FILE" $DB_NAME
+cp -f "$BACKUP_FILE" "$BACKUP_DIR/offroad_latest.dump"
+echo " -> Backup written to $BACKUP_FILE"
+
 echo "========================================================"
 echo " PIPELINE COMPLETE!"
 echo "========================================================"
