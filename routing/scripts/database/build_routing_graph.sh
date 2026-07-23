@@ -164,11 +164,13 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     DECLARE
         rec RECORD; edge1 RECORD; edge2 RECORD;
         new_geom geometry; new_source bigint; new_target bigint;
-        deleted_dead_ends int := 1; merged_count int := 1; 
+        deleted_dead_ends int := 1; merged_count int := 1;
         deleted_loops int := 1; deleted_dupes int := 1;
         pass_count int := 0;
         _deg2_count int := 0;
         _geom_type text;
+        _edge1_is_offroad boolean;
+        _edge2_is_offroad boolean;
     BEGIN
         WHILE deleted_dead_ends > 0 OR merged_count > 0 OR deleted_loops > 0 OR deleted_dupes > 0 LOOP
             pass_count := pass_count + 1;
@@ -219,6 +221,42 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
 
                 IF edge1 IS NULL OR edge2 IS NULL THEN
                     INSERT INTO gis.debug_log (pass_count, action, detail) VALUES (pass_count, 'MERGE_FAIL', 'Could not find one or both edges in the database.');
+                    CONTINUE;
+                END IF;
+
+                -- Preserve real offroad<->paved transitions as actual graph nodes. Merging across
+                -- this boundary would blend two segments with very different offroad character into
+                -- one edge, forcing an arbitrary COALESCE to pick a single surface/highway for the
+                -- whole thing and hiding exactly where the pavement ends and the dirt begins - the one
+                -- distinction that matters for routing (e.g. a 1km grade3 track that ends in a 20m
+                -- grade1 asphalt link would otherwise be recorded as entirely one or the other).
+                -- All other degree-2 transitions (e.g. grade2->grade3, both offroad) keep merging
+                -- exactly as before, so the loop-finding graph's node budget isn't spent on
+                -- differences nobody cares about. is_offroad is always set by the initial insert
+                -- above and carried through every merge via OR, so it should never actually be NULL
+                -- here - the CASE fallback (identical to that original rule) is defensive insurance
+                -- only, recomputed from this edge's own surface/tracktype/highway if it ever is.
+                _edge1_is_offroad := COALESCE(edge1.is_offroad,
+                    CASE
+                        WHEN edge1.surface IN ('unpaved', 'gravel', 'fine_gravel', 'compacted', 'dirt', 'ground', 'sand', 'grass', 'wood') THEN true
+                        WHEN edge1.tracktype IN ('grade2', 'grade3', 'grade4', 'grade5') THEN true
+                        WHEN edge1.highway = 'track'
+                             AND (edge1.surface IS NULL OR edge1.surface NOT IN ('paved', 'asphalt', 'concrete', 'paving_stones', 'cobblestone'))
+                             AND (edge1.tracktype IS NULL OR edge1.tracktype != 'grade1') THEN true
+                        ELSE false
+                    END);
+                _edge2_is_offroad := COALESCE(edge2.is_offroad,
+                    CASE
+                        WHEN edge2.surface IN ('unpaved', 'gravel', 'fine_gravel', 'compacted', 'dirt', 'ground', 'sand', 'grass', 'wood') THEN true
+                        WHEN edge2.tracktype IN ('grade2', 'grade3', 'grade4', 'grade5') THEN true
+                        WHEN edge2.highway = 'track'
+                             AND (edge2.surface IS NULL OR edge2.surface NOT IN ('paved', 'asphalt', 'concrete', 'paving_stones', 'cobblestone'))
+                             AND (edge2.tracktype IS NULL OR edge2.tracktype != 'grade1') THEN true
+                        ELSE false
+                    END);
+
+                IF _edge1_is_offroad IS DISTINCT FROM _edge2_is_offroad THEN
+                    INSERT INTO gis.debug_log (pass_count, action, detail) VALUES (pass_count, 'MERGE_SKIP_TRANSITION', 'Node ' || rec.node_id || ' preserved: is_offroad differs between edges ' || rec.edges[1] || ' and ' || rec.edges[2] || '.');
                     CONTINUE;
                 END IF;
 
