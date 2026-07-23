@@ -97,14 +97,16 @@ public class HardPenaltiesTests
         // Loop config: NationalPark = 600.0, Gate = 200.0 (higher than route)
         // Expected: 100.0 - 600.0 - 200.0 = -700.0
         var sut = new LoopCandidateScorer(CreateOptionsMonitor());
+        var offroadSegment = CreateOffroadSegment();
         var intent = new LoopIntent
         {
             Start = new Coordinate(50.0, 14.0),
-            PreferredLengthKm = 30,
+            // Matches the candidate's total distance so the (unrelated) distance-deviation penalty is zero
+            // and this test keeps isolating the still-pending restriction/barrier penalties.
+            PreferredLengthKm = offroadSegment.DistanceMeters / 1000.0,
             MaxDriveDistanceKm = 50
         };
 
-        var offroadSegment = CreateOffroadSegment();
         var candidates = new[]
         {
             CreateLoopCandidate(
@@ -167,7 +169,7 @@ public class HardPenaltiesTests
             new UserRoutingProfile());
 
         var loopResult = loopScorer.Score(loopCandidates,
-            new LoopIntent { Start = new Coordinate(50, 14), PreferredLengthKm = 30, MaxDriveDistanceKm = 50 },
+            new LoopIntent { Start = new Coordinate(50, 14), PreferredLengthKm = offroadSegment.DistanceMeters / 1000.0, MaxDriveDistanceKm = 50 },
             new UserRoutingProfile());
 
         // Assert — Loop NationalPark penalty (600) is higher than Route (500)
@@ -282,7 +284,8 @@ public class HardPenaltiesTests
             0,
             new Coordinate(50.0, 14.0),
             0,
-            0);
+            0,
+            entranceCoordinate: new Coordinate(50.0, 14.0));
     }
 
     private static Segment CreateOffroadSegment()

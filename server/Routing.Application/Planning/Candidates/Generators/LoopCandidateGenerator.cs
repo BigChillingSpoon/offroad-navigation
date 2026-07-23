@@ -12,8 +12,6 @@ using Routing.Domain.Utilities;
 using Routing.Application.Abstractions.Persistence;
 using Routing.Application.Planning.Skeletons.Services;
 using Routing.Application.Planning.Skeletons.Models;
-using Routing.Domain.Models;
-using Offroad.Routing.Application.Abstractions.Persistence;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -21,18 +19,21 @@ namespace Routing.Application.Planning.Candidates.Generators
     {
         private readonly IRoutingProvider _routingProvider;
         private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
-        private readonly IHookpointRepository _hookpointRepository;
+        private readonly INodeRepository _nodeRepository;
+        private readonly IEdgeRepository _edgeRepository;
         private readonly ILoopSkeletonFinder _skeletonFinder;
 
         public LoopCandidateGenerator(
             IRoutingProvider routingProvider,
             IRestrictedZoneBuilder restrictedZoneBuilder,
-            IHookpointRepository hookpointRepository,
+            INodeRepository nodeRepository,
+            IEdgeRepository edgeRepository,
             ILoopSkeletonFinder skeletonFinder)
         {
             _routingProvider = routingProvider;
             _restrictedZoneBuilder = restrictedZoneBuilder;
-            _hookpointRepository = hookpointRepository;
+            _nodeRepository = nodeRepository;
+            _edgeRepository = edgeRepository;
             _skeletonFinder = skeletonFinder;
         }
 
@@ -53,39 +54,53 @@ namespace Routing.Application.Planning.Candidates.Generators
                 return Array.Empty<LoopTripCandidate>();
 
             // 4. PARALLELY GENERATE CANDIDATES FOR ALL SKELETONS
-            var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, index, ct));
+            var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, intent, index, ct));
             var candidates = await Task.WhenAll(candidateTasks);
 
             return candidates.Where(c => c is not null).ToList()!;
         }
 
-        //clean
-        private async Task<LoopTripCandidate?> GenerateSingleCandidateAsync(LoopSkeleton skeleton, int index, CancellationToken ct)
+        private async Task<LoopTripCandidate?> GenerateSingleCandidateAsync(LoopSkeleton skeleton, LoopIntent intent, int index, CancellationToken ct)
         {
-            var providerRoute = await _routingProvider.GetRouteAsync(skeleton.Entrance, skeleton.Entrance, skeleton.Waypoints, ct);
-            return await MapToCandidateAsync(providerRoute, index);
+            var routes = await _routingProvider.GetRoutesAsync(BuildLoopPoints(skeleton), intent.ToRoutingPreferences(), ct);
+            return await MapToCandidateAsync(routes.First(), skeleton.Entrance, index);
         }
 
-        //clean
+        private static IReadOnlyList<Coordinate> BuildLoopPoints(LoopSkeleton skeleton)
+        {
+            var points = new List<Coordinate> { skeleton.Entrance };
+            points.AddRange(skeleton.Waypoints);
+            points.Add(skeleton.Entrance);
+            return points;
+        }
+
         private async Task<IReadOnlyList<LoopSkeleton>> ProcessArenaAsync(Coordinate entrance, LoopIntent intent, CancellationToken ct)
         {
-            var arenaHookpoints = await _hookpointRepository.GetHookpointsNearAsync(
+            // 1. ARENA SELECTION & SINGLE DB FETCH: nodes within the arena radius, then only the
+            // edges that connect two of those nodes (guarantees a fully-resolvable graph).
+            var arenaNodes = await _nodeRepository.GetNodesNearAsync(
                 entrance,
                 intent.PreferredLengthKm * 1000 / 2,
                 ct);
 
-            if (!arenaHookpoints.Any())
+            if (!arenaNodes.Any())
                 return Array.Empty<LoopSkeleton>();
 
-            //TODO modify after creation of final skeleton finder
-            var startHookpoint = new Hookpoint(entrance, 0, 0, false);
+            var arenaNodeIds = arenaNodes.Select(n => n.Id).ToList();
+            var arenaEdges = await _edgeRepository.GetEdgesConnectingAsync(arenaNodeIds, ct);
 
-            return _skeletonFinder.FindSkeletons(startHookpoint, arenaHookpoints, intent.PreferredLengthKm * 1000)
+            // The start of the search must be a real graph node - pick the one nearest the requested entrance.
+            var startNode = arenaNodes
+                .OrderBy(n => GeoCalculator.CalculateDistance(n.Coordinate, entrance))
+                .First();
+
+            var options = new SkeletonSearchOptions(intent.AllowGates, intent.AllowPrivateRoads, intent.AllowRestrictedZones);
+
+            return _skeletonFinder.FindSkeletons(startNode, arenaNodes, arenaEdges, intent.PreferredLengthKm * 1000, options)
                 .Take(5)
                 .ToList();
         }
 
-        //clean
         private async Task<IReadOnlyList<Coordinate>> GetMostSuitableEntrancesAsync(Coordinate userStart, double maxDriveDistanceKm, int maxEntrances, CancellationToken ct)
         {
             // TODO: Create smart arena finder
@@ -93,11 +108,11 @@ namespace Routing.Application.Planning.Candidates.Generators
         }
 
        
-        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
+        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, Coordinate entranceCoordinate, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
-            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_loop_candidate_{index}.gpx");
+            PlanningDebugExtensions.LogToGPX(geometry, $"./debug_loop_candidate_{index}.gpx");
 
             var maxEdgeIndex = geometry.Count - 1;
 
@@ -118,7 +133,8 @@ namespace Routing.Application.Planning.Candidates.Generators
                     route.Distance, route.Duration, route.Ascend, route.Descend, maxGradient,
                     hookCoordinate: default,
                     hookPolylineIndex: default,
-                    estimatedTransitDistanceMeters: default);
+                    estimatedTransitDistanceMeters: default,
+                    entranceCoordinate: entranceCoordinate);
         }
 
         private IReadOnlyList<Coordinate> GetValidGeometry(EncodedPolyline polyline)

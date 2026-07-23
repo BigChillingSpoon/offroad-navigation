@@ -11,6 +11,7 @@ using Routing.Application.Loops.Queries;
 using Routing.Application.Loops;
 using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Candidates.Scoring;
+using Routing.Application.Planning.Candidates.Selection;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Candidates.Builders;
 using Routing.Application.Planning.Pipelines;
@@ -45,6 +46,9 @@ namespace Routing.Domain
             services.AddScoped<ITripCandidateScorer<RouteIntent, TripCandidate>, RouteCandidateScorer>();
             services.AddScoped<ITripCandidateScorer<LoopIntent, LoopTripCandidate>, LoopCandidateScorer>();
 
+            //SELECTORS
+            services.AddScoped<ICandidateSelector<RouteIntent, TripCandidate>, PassThroughCandidateSelector<RouteIntent, TripCandidate>>();
+            services.AddScoped<ICandidateSelector<LoopIntent, LoopTripCandidate>, LoopEntranceSelector>();
 
             //GOALS
             services.AddScoped<ITripGoal<LoopIntent, LoopTripCandidate>, LoopGoal>();
@@ -64,6 +68,7 @@ namespace Routing.Domain
             services.AddScoped<ITripMapper<LoopTripCandidate>,LoopTripMapper>();
 
             //LOOP FINDERS
+            services.AddScoped<ILoopDirectionPreference, SteepestDescentFirstPreference>();
             services.AddScoped<ILoopSkeletonFinder, LoopSkeletonFinder>();
             return services;
         }

@@ -8,5 +8,6 @@ namespace Routing.Application.Contracts.Models
         public required double PreferredLengthKm { get; init; }
         public bool AllowPrivateRoads { get; init; }
         public bool AllowGates { get; init; }
+        public bool AllowRestrictedZones { get; init; }
     }
 }

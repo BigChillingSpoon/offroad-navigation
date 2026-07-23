@@ -1,4 +1,4 @@
-﻿using Routing.Application.Planning.Intents;
+using Routing.Application.Ports;
 using Routing.Domain.Enums;
 using Routing.Infrastructure.GraphHopper.DTOs;
 
@@ -6,27 +6,22 @@ namespace Routing.Infrastructure.GraphHopper.Builders
 {
     public static class GraphHopperProfileBuilder
     {
-        public static string ResolveProfileName(ITripIntent intent)
+        public static string ResolveProfileName(RoutingPreferences preferences)
         {
-            return intent switch
+            return preferences.Balance switch
             {
-                LoopIntent => "offroad_hardcore",
-                RouteIntent route => route.Balance switch
-                {
-                    RouteBalance.Shortest => "offroad_shortest",
-                    RouteBalance.Balanced => "offroad_balanced",
-                    RouteBalance.MaxOffroad => "offroad_hardcore",
-                    _ => "offroad_balanced"
-                },
-                _ => "car"
+                RouteBalance.Shortest => "offroad_shortest",
+                RouteBalance.Balanced => "offroad_balanced",
+                RouteBalance.MaxOffroad => "offroad_hardcore",
+                _ => "offroad_balanced"
             };
         }
 
-        public static GraphHopperCustomModel BuildCustomModel(ITripIntent intent)
+        public static GraphHopperCustomModel BuildCustomModel(RoutingPreferences preferences)
         {
             var customModel = new GraphHopperCustomModel();
 
-            if (!intent.AllowPrivateRoads)
+            if (!preferences.AllowPrivateRoads)
             {
                 customModel.Priority.Add(new PriorityStatement
                 {
@@ -36,15 +31,15 @@ namespace Routing.Infrastructure.GraphHopper.Builders
                 customModel.Priority.Add(new PriorityStatement
                 {
                     IfCondition = "in_cz_parks == true && road_class == TRACK",
-                    MultiplyBy = 0.0 
+                    MultiplyBy = 0.0
                 });
             }
 
-            if (!intent.AllowGates)
+            if (!preferences.AllowGates)
             {
                 customModel.Priority.Add(new PriorityStatement
                 {
-                    IfCondition = "custom_barrier > 1", // 1 = none in GH 
+                    IfCondition = "custom_barrier > 1", // 1 = none in GH
                     MultiplyBy = 0.000001
                 });
             }
