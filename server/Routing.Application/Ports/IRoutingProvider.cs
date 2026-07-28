@@ -1,12 +1,10 @@
-﻿
 using Routing.Application.Planning.Candidates.Models;
-using Routing.Application.Planning.Intents;
+using Routing.Domain.ValueObjects;
 
-namespace Routing.Application.Abstractions
+namespace Routing.Application.Ports
 {
     public interface IRoutingProvider
     {
-        Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken);
-        Task<List<ProviderRoute>> GetLoopsAsync(LoopIntent intent, CancellationToken cancellationToken);
+        Task<List<ProviderRoute>> GetRoutesAsync(IReadOnlyList<Coordinate> points, RoutingPreferences preferences, CancellationToken cancellationToken);
     }
 }

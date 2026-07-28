@@ -1,4 +1,6 @@
 using Routing.Domain.ValueObjects;
+using System;
+using System.Collections.Generic;
 
 namespace Routing.Domain.Utilities
 {
@@ -90,9 +92,7 @@ namespace Routing.Domain.Utilities
 
         /// <summary>
         /// Calculates the great-circle distance between two coordinates using the Haversine formula.
-        /// Haversine is not perfectly precise but for our purposes its okay, could be changed in the future
         /// </summary>
-        /// <returns>Distance in meters</returns>
         public static double CalculateDistance(Coordinate from, Coordinate to)
         {
             var lat1 = DegreesToRadians(from.Latitude);
@@ -109,6 +109,106 @@ namespace Routing.Domain.Utilities
             return EarthRadiusMeters * c;
         }
 
+        /// <summary>
+        /// Calculates the initial bearing (forward azimuth) from point A to point B.
+        /// Returns degrees from 0 to 360.
+        /// </summary>
+        public static double CalculateBearing(Coordinate from, Coordinate to)
+        {
+            var lat1 = DegreesToRadians(from.Latitude);
+            var lat2 = DegreesToRadians(to.Latitude);
+            var dLon = DegreesToRadians(to.Longitude - from.Longitude);
+
+            var y = Math.Sin(dLon) * Math.Cos(lat2);
+            var x = Math.Cos(lat1) * Math.Sin(lat2) - Math.Sin(lat1) * Math.Cos(lat2) * Math.Cos(dLon);
+
+            var bearingRadians = Math.Atan2(y, x);
+            var bearingDegrees = RadiansToDegrees(bearingRadians);
+
+            return (bearingDegrees + 360) % 360;
+        }
+
+        /// <summary>
+        /// Calculates the absolute difference between two angles (0-360), returning the shortest turn (0-180).
+        /// </summary>
+        public static double GetAngleDifference(double angle1, double angle2)
+        {
+            double diff = Math.Abs(angle1 - angle2) % 360;
+            return diff > 180 ? 360 - diff : diff;
+        }
+
+        /// <summary>
+        /// Bearing of an edge's very first segment, in the direction of travel - the true initial heading
+        /// as you depart the shared node. A straight chord across the whole edge (source directly to
+        /// target) is wrong here whenever the edge has interior vertices: it can differ sharply from the
+        /// real heading right at the junction, which is what a turn-angle check actually needs to compare.
+        /// </summary>
+        /// <param name="edgeGeometry">The edge's vertices, ordered from its Source node to its Target node.</param>
+        /// <param name="traversedInReverse">True if traveling from the edge's Target node to its Source node.</param>
+        public static double CalculateDepartureBearing(IReadOnlyList<Coordinate> edgeGeometry, bool traversedInReverse)
+        {
+            if (edgeGeometry.Count < 2)
+                throw new ArgumentException("Edge geometry must have at least two vertices.", nameof(edgeGeometry));
+
+            return traversedInReverse
+                ? CalculateBearing(edgeGeometry[^1], edgeGeometry[^2])
+                : CalculateBearing(edgeGeometry[0], edgeGeometry[1]);
+        }
+
+        /// <summary>
+        /// Bearing of an edge's very last segment, in the direction of travel - the true heading as you
+        /// arrive at the shared node, used as the reference heading for the next hop's turn-angle check.
+        /// </summary>
+        /// <param name="edgeGeometry">The edge's vertices, ordered from its Source node to its Target node.</param>
+        /// <param name="traversedInReverse">True if traveling from the edge's Target node to its Source node.</param>
+        public static double CalculateArrivalBearing(IReadOnlyList<Coordinate> edgeGeometry, bool traversedInReverse)
+        {
+            if (edgeGeometry.Count < 2)
+                throw new ArgumentException("Edge geometry must have at least two vertices.", nameof(edgeGeometry));
+
+            return traversedInReverse
+                ? CalculateBearing(edgeGeometry[1], edgeGeometry[0])
+                : CalculateBearing(edgeGeometry[^2], edgeGeometry[^1]);
+        }
+
+        /// <summary>
+        /// Calculates the cross-track distance (in meters) from a point P to a line segment AB.
+        /// Uses a highly optimized Local Flat-Earth projection for fast RAM scoring.
+        /// </summary>
+        public static bool IsPointInEllipse(Coordinate p, Coordinate a, Coordinate b, double minorAxisRadiusMeters = 250.0)
+        {
+            // 1. Rychl� Flat-Earth projekce (na metry)
+            double latMid = DegreesToRadians(a.Latitude);
+            double metersPerDegreeLat = 111132.92;
+            double metersPerDegreeLon = 111412.84 * Math.Cos(latMid);
+
+            // Kart�zsk� sou�adnice (A je po��tek [0,0])
+            double bx = (b.Longitude - a.Longitude) * metersPerDegreeLon;
+            double by = (b.Latitude - a.Latitude) * metersPerDegreeLat;
+            double px = (p.Longitude - a.Longitude) * metersPerDegreeLon;
+            double py = (p.Latitude - a.Latitude) * metersPerDegreeLat;
+
+            // 2. V�po�et vzd�lenost� (A->B, A->P, P->B)
+            double distAB = Math.Sqrt(bx * bx + by * by);
+            double distAP = Math.Sqrt(px * px + py * py);
+            double distPB = Math.Sqrt((px - bx) * (px - bx) + (py - by) * (py - by));
+
+            if (distAB == 0) return distAP <= minorAxisRadiusMeters;
+
+            // 3. Matematika Elipsy (Hled�me maxim�ln� d�lku cesty p�es bod P)
+            double c = distAB / 2.0; // Vzd�lenost od st�edu k ohnisku
+            double bRadius = minorAxisRadiusMeters; // Tvoje po�adovan� ���ka v nej�ir��m bod�
+
+            // Vzorec pro elipsu: a^2 = b^2 + c^2 (kde 'a' je polovina d�lky prov�zku)
+            double aAxis = Math.Sqrt(bRadius * bRadius + c * c);
+
+            // Maxim�ln� povolen� sou�et vzd�lenost� (D�lka "prov�zku" elipsy)
+            double maxAllowedPathLength = 2 * aAxis;
+
+            // 4. Fin�ln� zhodnocen�: Je zaj��ka p�es bod P v r�mci budgetu na�� elipsy?
+            return (distAP + distPB) <= maxAllowedPathLength;
+        }
         private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
+        private static double RadiansToDegrees(double radians) => radians * 180 / Math.PI;
     }
 }

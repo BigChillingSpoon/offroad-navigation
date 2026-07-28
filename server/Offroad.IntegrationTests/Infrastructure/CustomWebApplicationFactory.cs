@@ -4,11 +4,12 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Http.Resilience;
-using Routing.Application.Abstractions;
+using Routing.Application.Ports;
 using Routing.Infrastructure.Data;
-using Routing.Infrastructure.Persistance; 
+using Routing.Infrastructure.Persistance;
 using Testcontainers.PostgreSql;
 
 namespace Offroad.IntegrationTests.Infrastructure;
@@ -37,10 +38,8 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Offroad.
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        //For skipping the seeder inside of Program.cs
+        //For skipping the migration runner inside of Program.cs - this factory runs its own migration below
         builder.UseEnvironment("Testing");
-
-        builder.UseSetting("Routing:ParksGeoJsonPath", "Infrastructure/dummy_parks.json");
 
         builder.ConfigureAppConfiguration((_, config) =>
         {
@@ -53,17 +52,22 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Offroad.
         builder.ConfigureTestServices(services =>
         {
             // --- SETTING UP DATABASE (TESTCONTAINERS) ---
-            var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-            if (descriptor != null)
-            {
-                services.Remove(descriptor);
-            }
+            // AddRoutingInfrastructure registers IDbContextFactory<ApplicationDbContext> (used by
+            // GisService/NodeRepository/EdgeRepository) plus a scoped ApplicationDbContext derived
+            // from it, both pointed at the real connection string - remove both and re-point at
+            // the test container. Only the factory needs re-registering; the scoped context is
+            // derived from whichever factory is registered when it's resolved.
+            services.RemoveAll<DbContextOptions<ApplicationDbContext>>();
+            services.RemoveAll<IDbContextFactory<ApplicationDbContext>>();
+            services.RemoveAll<ApplicationDbContext>();
 
-            services.AddDbContext<ApplicationDbContext>(options =>
+            services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
             {
                 // We connect to the random port that Docker assigned to us
                 options.UseNpgsql(_dbContainer.GetConnectionString(), o => o.UseNetTopologySuite());
             });
+
+            services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
 
             // --- GH SETTINGS --

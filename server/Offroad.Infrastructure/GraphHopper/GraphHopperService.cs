@@ -1,4 +1,4 @@
-using Routing.Application.Abstractions;
+using Routing.Application.Ports;
 using Microsoft.Extensions.Options;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Candidates.Models;
@@ -6,10 +6,9 @@ using System.Text.Json;
 using Routing.Infrastructure.GraphHopper.Mappings;
 using Routing.Infrastructure.GraphHopper.DTOs;
 using Routing.Infrastructure.GraphHopper.Builders;
-using Routing.Application.Planning.Intents;
 using Routing.Domain.Utilities;
 using System.Net.Http.Json;
-using Routing.Domain.ValueObjects; // P�id�no pro Coordinate
+using Routing.Domain.ValueObjects; 
 
 namespace Routing.Infrastructure.GraphHopper
 {
@@ -34,33 +33,39 @@ namespace Routing.Infrastructure.GraphHopper
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
         
-        public async Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken)
+        public async Task<List<ProviderRoute>> GetRoutesAsync(IReadOnlyList<Coordinate> points, RoutingPreferences preferences, CancellationToken cancellationToken)
         {
+            if (points is null || points.Count < 2)
+                throw new ArgumentException("At least two points are required.", nameof(points));
+
+            // GraphHopper's alternative_route algorithm only supports a plain start->end request -
+            // it doesn't support via-points/waypoints. Only offer it when there are none.
+            var hasWaypoints = points.Count > 2;
+
             var requestPayload = new GraphHopperRouteRequest
             {
-                Points = new[]
-                {
-                    new[] { intent.Start.Longitude, intent.Start.Latitude },
-                    new[] { intent.End.Longitude, intent.End.Latitude }
-                },
-                Profile = GraphHopperProfileBuilder.ResolveProfileName(intent),
-                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(intent),
+                Points = points.Select(p => new[] { p.Longitude, p.Latitude }).ToArray(),
+                Profile = GraphHopperProfileBuilder.ResolveProfileName(preferences),
+                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(preferences),
                 Elevation = _graphHopperOptions.Elevation,
                 Instructions = _graphHopperOptions.Instructions,
                 CalcPoints = _graphHopperOptions.CalcPoints,
                 PointsEncoded = _graphHopperOptions.PointsEncoded,
                 Details = _graphHopperOptions.RequestedDetails,
-                Algorithm = _graphHopperOptions.Algorithm,
-                AlternativeRouteMaxPaths = _graphHopperOptions.AlternativeRouteMaxPaths,
-                AlternativeRouteMaxShareFactor = _graphHopperOptions.AlternativeRouteMaxShareFactor,
-                AlternativeRouteMaxWeightFactor = _graphHopperOptions.AlternativeRouteMaxWeightFactor,
+                Algorithm = hasWaypoints ? null : _graphHopperOptions.Algorithm,
+                AlternativeRouteMaxPaths = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxPaths,
+                AlternativeRouteMaxShareFactor = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxShareFactor,
+                AlternativeRouteMaxWeightFactor = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxWeightFactor,
                 ChDisable = _graphHopperOptions.ChDisable
             };
 
-            var dynamicTimeout = CalculateDynamicTimeout(intent.Start, intent.End);
+            // points[1] is intent.End for a plain 2-point route, and the first waypoint (or start
+            // itself, if there are none) for a loop. Not points[^1] - for a closed loop that's
+            // always the start again (distance 0), which would collapse the timeout to its minimum.
+            var dynamicTimeout = CalculateDynamicTimeout(points[0], points[1]);
             var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
 
-            if (response?.Paths is null)
+            if (response?.Paths is null || !response.Paths.Any())
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
 
             return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
@@ -122,74 +127,6 @@ namespace Routing.Infrastructure.GraphHopper
             return url;
         }
         
-        public async Task<List<ProviderRoute>> GetLoopsAsync(LoopIntent intent, CancellationToken cancellationToken)
-        {
-            var requestPayload = new GraphHopperRouteRequest
-            {
-                Points = new[]
-                {
-                    new[] { intent.Start.Longitude, intent.Start.Latitude } //for now we are sending only start point, in future we have to calculate start point in the radius not user's start point
-                },
-                Profile = GraphHopperProfileBuilder.ResolveProfileName(intent),
-                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(intent),
-                Elevation = _graphHopperOptions.Elevation,
-                Instructions = _graphHopperOptions.Instructions,
-                CalcPoints = _graphHopperOptions.CalcPoints,
-                PointsEncoded = _graphHopperOptions.PointsEncoded,
-                Details = _graphHopperOptions.RequestedDetails,
-                Algorithm = "round_trip",
-                ChDisable = true,
-                RoundTripDistance = (int)intent.PreferredLengthKm * 1000, 
-                RoundTripSeed = 2 
-            };
-
-            var dynamicTimeout = CalculateDynamicTimeoutForLoop(intent.PreferredLengthKm);
-            var response = await ExecuteLoopRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
-
-            if (response?.Paths is null)
-                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
-
-            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
-        }
-
-        private async Task<GraphHopperRouteResponse?> ExecuteLoopRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)
-        {
-            var url = BuildUrl();
-
-            try
-            {
-                using var request = new HttpRequestMessage(HttpMethod.Post, url)
-                {
-                    Content = JsonContent.Create(requestPayload, options: _jsonOptions)
-                };
-                request.Options.Set(DynamicTimeoutKey, dynamicTimeout);
-                var rawJson = await request.Content.ReadAsStringAsync();
-                using var response = await _httpClient.SendAsync(request, cancellationToken);
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                    GraphhopperExceptionMapper.ThrowExceptionBasedOnStatusCode(response.StatusCode, responseBody);
-                }
-
-                return await response.Content.ReadFromJsonAsync<GraphHopperRouteResponse>(_jsonOptions, cancellationToken);
-            }
-            catch (TaskCanceledException ex) when (!cancellationToken.IsCancellationRequested)
-            {
-                throw new RoutingProviderException(RoutingProviderErrorCategory.Timeout, "GraphHopper loop request timed out.", ex);
-            }
-            catch (HttpRequestException ex)
-            {
-                throw new RoutingProviderException(RoutingProviderErrorCategory.Unavailable, "GraphHopper is unreachable.", ex);
-            }
-        }
-
-        private static TimeSpan CalculateDynamicTimeoutForLoop(double distanceKm)
-        {
-            var timeoutSeconds = BaseTimeoutSeconds + (distanceKm / 10.0) * SecondsPerTenKm;
-            timeoutSeconds = Math.Min(timeoutSeconds, MaxTimeoutSeconds);
-
-            return TimeSpan.FromSeconds(timeoutSeconds);
-        }
+        
     }
 }

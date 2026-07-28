@@ -20,14 +20,15 @@ public class LoopCandidateScorerTests
     #region Base Score Tests
 
     [Fact]
-    public void Score_FullOffroad_NoElevation_Returns100()
+    public void Score_FullOffroad_NoElevation_OnTarget_Returns100()
     {
         // Arrange
         // OffroadRatio = 1.0 → offroadScore = 100.0
         // ElevationGain = 0 → elevationPenalty = 0
+        // TotalDistance == PreferredLength → distancePenalty = 0
         // Expected: 100.0
-        var intent = CreateLoopIntent();
         var offroadSegment = CreateOffroadSegment();
+        var intent = CreateLoopIntent(preferredLengthKm: offroadSegment.DistanceMeters / 1000.0);
         var candidates = new[]
         {
             CreateCandidate(
@@ -43,14 +44,15 @@ public class LoopCandidateScorerTests
     }
 
     [Fact]
-    public void Score_FullOffroad_WithElevation_SubtractsElevationPenalty()
+    public void Score_FullOffroad_WithElevation_OnTarget_SubtractsElevationPenalty()
     {
         // Arrange
         // OffroadRatio = 1.0 → offroadScore = 100.0
         // ElevationGain = 500 → elevationPenalty = 500 * 0.01 = 5.0
+        // TotalDistance == PreferredLength → distancePenalty = 0
         // Expected: 100.0 - 5.0 = 95.0
-        var intent = CreateLoopIntent();
         var offroadSegment = CreateOffroadSegment();
+        var intent = CreateLoopIntent(preferredLengthKm: offroadSegment.DistanceMeters / 1000.0);
         var candidates = new[]
         {
             CreateCandidate(
@@ -67,13 +69,14 @@ public class LoopCandidateScorerTests
     }
 
     [Fact]
-    public void Score_NoOffroad_HighElevation_ReturnsNegative()
+    public void Score_NoOffroad_HighElevation_OnTarget_ReturnsNegative()
     {
         // Arrange
         // OffroadRatio = 0 → offroadScore = 0
         // ElevationGain = 2000 → elevationPenalty = 20.0
+        // TotalDistance == PreferredLength → distancePenalty = 0
         // Expected: 0 - 20.0 = -20.0
-        var intent = CreateLoopIntent();
+        var intent = CreateLoopIntent(preferredLengthKm: 10);
         var candidates = new[]
         {
             CreateCandidate(totalDistance: 10_000, elevationGain: 2000.0)
@@ -84,6 +87,27 @@ public class LoopCandidateScorerTests
 
         // Assert
         Assert.Equal(-20.0, result[0].Score, precision: 5);
+    }
+
+    [Fact]
+    public void Score_DistanceFarBelowTarget_SubtractsDistancePenalty()
+    {
+        // Arrange
+        // PreferredLength = 30km, TotalDistance = 10km → deviationRatio = 0.667, above the
+        // default MaxRatio (0.3), so the "excessive" branch applies:
+        // penalty = 15 + (0.667 - 0.3) * 200 = 88.33
+        // OffroadRatio = 0, ElevationGain = 0 → Expected: 0 - 0 - 88.33 = -88.33
+        var intent = CreateLoopIntent(preferredLengthKm: 30);
+        var candidates = new[]
+        {
+            CreateCandidate(totalDistance: 10_000)
+        };
+
+        // Act
+        var result = _sut.Score(candidates, intent, new UserRoutingProfile());
+
+        // Assert
+        Assert.Equal(-88.33, result[0].Score, precision: 2);
     }
 
     #endregion
@@ -109,12 +133,12 @@ public class LoopCandidateScorerTests
         return new TestOptionsMonitor<ScoringProfiles>(new ScoringProfiles());
     }
 
-    private static LoopIntent CreateLoopIntent()
+    private static LoopIntent CreateLoopIntent(double preferredLengthKm = 30)
     {
         return new LoopIntent
         {
             Start = new Coordinate(50.0, 14.0),
-            PreferredLengthKm = 30,
+            PreferredLengthKm = preferredLengthKm,
             MaxDriveDistanceKm = 50
         };
     }
@@ -139,7 +163,8 @@ public class LoopCandidateScorerTests
             0,
             new Coordinate(50.0, 14.0),
             0,
-            0);
+            0,
+            entranceCoordinate: new Coordinate(50.0, 14.0));
     }
 
     private static Segment CreateOffroadSegment()

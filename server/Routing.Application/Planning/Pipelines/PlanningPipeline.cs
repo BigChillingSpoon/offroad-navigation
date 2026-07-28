@@ -1,6 +1,7 @@
 ﻿using Routing.Application.Planning.Candidates.Generators;
 using Routing.Application.Planning.Goals;
 using Routing.Application.Planning.Candidates.Scoring;
+using Routing.Application.Planning.Candidates.Selection;
 using Routing.Application.Planning.Mappings;
 using Routing.Application.Planning.Intents;
 using Routing.Application.Planning.Candidates.Models;
@@ -15,17 +16,20 @@ namespace Routing.Application.Planning.Pipelines
         private readonly ICandidateGenerator<TIntent, TCandidate> _generator;
         private readonly ITripGoal<TIntent, TCandidate> _goal;
         private readonly ITripCandidateScorer<TIntent, TCandidate> _scorer;
+        private readonly ICandidateSelector<TIntent, TCandidate> _selector;
         private readonly ITripMapper<TCandidate> _mapper;
 
         public PlanningPipeline(
             ICandidateGenerator<TIntent, TCandidate> generator,
             ITripGoal<TIntent, TCandidate> goal,
             ITripCandidateScorer<TIntent, TCandidate> scorer,
+            ICandidateSelector<TIntent, TCandidate> selector,
             ITripMapper<TCandidate> mapper)
         {
             _generator = generator;
             _goal = goal;
             _scorer = scorer;
+            _selector = selector;
             _mapper = mapper;
         }
 
@@ -40,8 +44,11 @@ namespace Routing.Application.Planning.Pipelines
             // Score
             var scored = _scorer.Score(validCandidates, intent, profile);
 
+            // Select
+            var selected = _selector.Select(scored, intent);
+
             // Sort & Map
-            return scored
+            return selected
                 .OrderByDescending(s => s.Score)
                 .Select(s => _mapper.MapToPlan(s.Candidate))
                 .ToList();

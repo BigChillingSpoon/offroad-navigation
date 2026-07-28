@@ -1,4 +1,4 @@
-﻿using Routing.Application.Abstractions;
+﻿using Routing.Application.Ports;
 using Routing.Domain.Enums;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
@@ -9,6 +9,9 @@ using Routing.Application.Planning.Candidates.Builders;
 using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
 using Routing.Domain.Utilities;
+using Routing.Application.Abstractions.Persistence;
+using Routing.Application.Planning.Skeletons.Services;
+using Routing.Application.Planning.Skeletons.Models;
 
 namespace Routing.Application.Planning.Candidates.Generators
 {
@@ -16,34 +19,100 @@ namespace Routing.Application.Planning.Candidates.Generators
     {
         private readonly IRoutingProvider _routingProvider;
         private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
+        private readonly INodeRepository _nodeRepository;
+        private readonly IEdgeRepository _edgeRepository;
+        private readonly ILoopSkeletonFinder _skeletonFinder;
 
-        public LoopCandidateGenerator(IRoutingProvider routingProvider, IRestrictedZoneBuilder restrictedZoneBuilder)
+        public LoopCandidateGenerator(
+            IRoutingProvider routingProvider,
+            IRestrictedZoneBuilder restrictedZoneBuilder,
+            INodeRepository nodeRepository,
+            IEdgeRepository edgeRepository,
+            ILoopSkeletonFinder skeletonFinder)
         {
             _routingProvider = routingProvider;
             _restrictedZoneBuilder = restrictedZoneBuilder;
+            _nodeRepository = nodeRepository;
+            _edgeRepository = edgeRepository;
+            _skeletonFinder = skeletonFinder;
         }
 
         public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
-            var loops = await _routingProvider.GetLoopsAsync(intent, ct);
-
-            if (loops is null || !loops.Any())
+            // 1. GET ALL SUITABLE OFFROAD ENTRANCES
+            var entrances = await GetMostSuitableEntrancesAsync(intent.Start, intent.MaxDriveDistanceKm, maxEntrances: 3, ct);
+            if (!entrances.Any())
                 return Array.Empty<LoopTripCandidate>();
 
-            int index = 0;
-            var candidateTasks = loops.Select(route => MapToCandidateAsync(route, index++));
+            // 2. PARALERLY GENERATE ALL ARENA SKELETONS
+            var arenaTasks = entrances.Select(entrance => ProcessArenaAsync(entrance, intent, ct));
+            var arenasResults = await Task.WhenAll(arenaTasks);
 
-            LoopTripCandidate[] candidates = await Task.WhenAll(candidateTasks);
+            // 3. GATHER ALL SKELETONS TOGETHER
+            var allSkeletons = arenasResults.SelectMany(s => s).ToList();
+            if (!allSkeletons.Any())
+                return Array.Empty<LoopTripCandidate>();
 
-            return candidates.ToList();
+            // 4. PARALLELY GENERATE CANDIDATES FOR ALL SKELETONS
+            var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, intent, index, ct));
+            var candidates = await Task.WhenAll(candidateTasks);
+
+            return candidates.Where(c => c is not null).ToList()!;
         }
 
-        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, int index)
+        private async Task<LoopTripCandidate?> GenerateSingleCandidateAsync(LoopSkeleton skeleton, LoopIntent intent, int index, CancellationToken ct)
+        {
+            var routes = await _routingProvider.GetRoutesAsync(BuildLoopPoints(skeleton), intent.ToRoutingPreferences(), ct);
+            return await MapToCandidateAsync(routes.First(), skeleton.Entrance, index);
+        }
+
+        private static IReadOnlyList<Coordinate> BuildLoopPoints(LoopSkeleton skeleton)
+        {
+            var points = new List<Coordinate> { skeleton.Entrance };
+            points.AddRange(skeleton.Waypoints);
+            points.Add(skeleton.Entrance);
+            return points;
+        }
+
+        private async Task<IReadOnlyList<LoopSkeleton>> ProcessArenaAsync(Coordinate entrance, LoopIntent intent, CancellationToken ct)
+        {
+            // 1. ARENA SELECTION & SINGLE DB FETCH: nodes within the arena radius, then only the
+            // edges that connect two of those nodes (guarantees a fully-resolvable graph).
+            var arenaNodes = await _nodeRepository.GetNodesNearAsync(
+                entrance,
+                intent.PreferredLengthKm * 1000 / 2,
+                ct);
+
+            if (!arenaNodes.Any())
+                return Array.Empty<LoopSkeleton>();
+
+            var arenaNodeIds = arenaNodes.Select(n => n.Id).ToList();
+            var arenaEdges = await _edgeRepository.GetEdgesConnectingAsync(arenaNodeIds, ct);
+
+            // The start of the search must be a real graph node - pick the one nearest the requested entrance.
+            var startNode = arenaNodes
+                .OrderBy(n => GeoCalculator.CalculateDistance(n.Coordinate, entrance))
+                .First();
+
+            var options = new SkeletonSearchOptions(intent.AllowGates, intent.AllowPrivateRoads, intent.AllowRestrictedZones);
+
+            return _skeletonFinder.FindSkeletons(startNode, arenaNodes, arenaEdges, intent.PreferredLengthKm * 1000, options)
+                .Take(5)
+                .ToList();
+        }
+
+        private async Task<IReadOnlyList<Coordinate>> GetMostSuitableEntrancesAsync(Coordinate userStart, double maxDriveDistanceKm, int maxEntrances, CancellationToken ct)
+        {
+            // TODO: Create smart arena finder
+            return new List<Coordinate> { userStart };
+        }
+
+       
+        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, Coordinate entranceCoordinate, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
-            //index is only for debug, to be removed 
-            PlanningDebugExtensions.LogToGPX(geometry, $"C:\\tmp\\debug_loop_candidate_{index}.gpx");
+            PlanningDebugExtensions.LogToGPX(geometry, $"./debug_loop_candidate_{index}.gpx");
 
             var maxEdgeIndex = geometry.Count - 1;
 
@@ -60,14 +129,14 @@ namespace Routing.Application.Planning.Candidates.Generators
             var maxGradient = GeoCalculator.CalculateMaxGradientPercentage(geometry);
 
             return LoopTripCandidate.Create(
-                segments, barriers, restrictedZones, route.Polyline,
+                    segments, barriers, restrictedZones, route.Polyline,
                     route.Distance, route.Duration, route.Ascend, route.Descend, maxGradient,
-                    hookCoordinate: default, // Placeholder
-                    hookPolylineIndex: default, // Placeholder
-                    estimatedTransitDistanceMeters: default); // Placeholder
+                    hookCoordinate: default,
+                    hookPolylineIndex: default,
+                    estimatedTransitDistanceMeters: default,
+                    entranceCoordinate: entranceCoordinate);
         }
 
-        //translate technical exception to domain specific one, so we can later on decide how to handle it based on category
         private IReadOnlyList<Coordinate> GetValidGeometry(EncodedPolyline polyline)
         {
             try

@@ -9,7 +9,6 @@ using Coordinate = Routing.Domain.ValueObjects.Coordinate;
 
 namespace Routing.Application.Planning.Candidates.Builders
 {
-    // POZOR: Budeš muset upravit i IRestrictedZoneBuilder interface, aby vracel Task!
     public class RestrictedZoneBuilder : IRestrictedZoneBuilder
     {
         private readonly GeometryFactory _geometryFactory;
@@ -59,7 +58,7 @@ namespace Routing.Application.Planning.Candidates.Builders
             // 2. Ask the db for parks that overlap with the route's bounding box - this will give us a much smaller set of parks to check against
             var overlappingParks = await _gisService.GetRestrictedZonesInAreaAsync(routeLine);
 
-            if (overlappingParks.Count == 0) return; // Trasa nejde pøes žádný park, konec.
+            if (overlappingParks.Count == 0) return; 
 
             // 3. create local index for the overlapping parks to speed up point-in-polygon checks
             var localIndex = new STRtree<IPreparedGeometry>();

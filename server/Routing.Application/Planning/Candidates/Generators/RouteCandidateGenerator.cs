@@ -1,4 +1,4 @@
-﻿using Routing.Application.Abstractions;
+﻿using Routing.Application.Ports;
 using Routing.Domain.Enums;
 using Routing.Application.Planning.Candidates.Models;
 using Routing.Application.Planning.Intents;
@@ -25,9 +25,10 @@ namespace Routing.Application.Planning.Candidates.Generators
 
         public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, CancellationToken ct)
         {
-            var routes = await _routingProvider.GetRoutesAsync(intent, ct);
+            var points = new[] { intent.Start, intent.End };
+            var routes = await _routingProvider.GetRoutesAsync(points, intent.ToRoutingPreferences(), ct);
 
-            if (routes is null || !routes.Any())
+            if (!routes.Any())
                 return Array.Empty<TripCandidate>();
 
             int index = 0;
