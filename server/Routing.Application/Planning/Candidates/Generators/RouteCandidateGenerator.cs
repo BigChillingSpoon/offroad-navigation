@@ -25,7 +25,8 @@ namespace Routing.Application.Planning.Candidates.Generators
 
         public async Task<IReadOnlyList<TripCandidate>> GenerateCandidatesAsync(RouteIntent intent, CancellationToken ct)
         {
-            var routes = await _routingProvider.GetRoutesAsync(intent, ct);
+            var points = new[] { intent.Start, intent.End };
+            var routes = await _routingProvider.GetRoutesAsync(points, intent.ToRoutingPreferences(), ct);
 
             if (!routes.Any())
                 return Array.Empty<TripCandidate>();

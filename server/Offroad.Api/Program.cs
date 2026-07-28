@@ -21,7 +21,7 @@ namespace Offroad.Api
             ConfigurePipeline(app);
 
             if (!app.Environment.IsEnvironment("Testing"))
-                await app.UseGisDataSeedingAsync();
+                await app.MigrateDatabaseAsync();
 
             app.Run();
         }

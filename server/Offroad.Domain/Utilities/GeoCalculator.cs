@@ -138,40 +138,74 @@ namespace Routing.Domain.Utilities
         }
 
         /// <summary>
+        /// Bearing of an edge's very first segment, in the direction of travel - the true initial heading
+        /// as you depart the shared node. A straight chord across the whole edge (source directly to
+        /// target) is wrong here whenever the edge has interior vertices: it can differ sharply from the
+        /// real heading right at the junction, which is what a turn-angle check actually needs to compare.
+        /// </summary>
+        /// <param name="edgeGeometry">The edge's vertices, ordered from its Source node to its Target node.</param>
+        /// <param name="traversedInReverse">True if traveling from the edge's Target node to its Source node.</param>
+        public static double CalculateDepartureBearing(IReadOnlyList<Coordinate> edgeGeometry, bool traversedInReverse)
+        {
+            if (edgeGeometry.Count < 2)
+                throw new ArgumentException("Edge geometry must have at least two vertices.", nameof(edgeGeometry));
+
+            return traversedInReverse
+                ? CalculateBearing(edgeGeometry[^1], edgeGeometry[^2])
+                : CalculateBearing(edgeGeometry[0], edgeGeometry[1]);
+        }
+
+        /// <summary>
+        /// Bearing of an edge's very last segment, in the direction of travel - the true heading as you
+        /// arrive at the shared node, used as the reference heading for the next hop's turn-angle check.
+        /// </summary>
+        /// <param name="edgeGeometry">The edge's vertices, ordered from its Source node to its Target node.</param>
+        /// <param name="traversedInReverse">True if traveling from the edge's Target node to its Source node.</param>
+        public static double CalculateArrivalBearing(IReadOnlyList<Coordinate> edgeGeometry, bool traversedInReverse)
+        {
+            if (edgeGeometry.Count < 2)
+                throw new ArgumentException("Edge geometry must have at least two vertices.", nameof(edgeGeometry));
+
+            return traversedInReverse
+                ? CalculateBearing(edgeGeometry[1], edgeGeometry[0])
+                : CalculateBearing(edgeGeometry[^2], edgeGeometry[^1]);
+        }
+
+        /// <summary>
         /// Calculates the cross-track distance (in meters) from a point P to a line segment AB.
         /// Uses a highly optimized Local Flat-Earth projection for fast RAM scoring.
         /// </summary>
         public static bool IsPointInEllipse(Coordinate p, Coordinate a, Coordinate b, double minorAxisRadiusMeters = 250.0)
         {
-            // 1. Rychlá Flat-Earth projekce (na metry)
+            // 1. Rychlï¿½ Flat-Earth projekce (na metry)
             double latMid = DegreesToRadians(a.Latitude);
             double metersPerDegreeLat = 111132.92;
             double metersPerDegreeLon = 111412.84 * Math.Cos(latMid);
 
-            // Kartézské souøadnice (A je poèátek [0,0])
+            // Kartï¿½zskï¿½ souï¿½adnice (A je poï¿½ï¿½tek [0,0])
             double bx = (b.Longitude - a.Longitude) * metersPerDegreeLon;
             double by = (b.Latitude - a.Latitude) * metersPerDegreeLat;
             double px = (p.Longitude - a.Longitude) * metersPerDegreeLon;
             double py = (p.Latitude - a.Latitude) * metersPerDegreeLat;
 
-            // 2. Výpoèet vzdáleností (A->B, A->P, P->B)
+            // 2. Vï¿½poï¿½et vzdï¿½lenostï¿½ (A->B, A->P, P->B)
             double distAB = Math.Sqrt(bx * bx + by * by);
             double distAP = Math.Sqrt(px * px + py * py);
             double distPB = Math.Sqrt((px - bx) * (px - bx) + (py - by) * (py - by));
 
             if (distAB == 0) return distAP <= minorAxisRadiusMeters;
 
-            // 3. Matematika Elipsy (Hledáme maximální délku cesty pøes bod P)
-            double c = distAB / 2.0; // Vzdálenost od støedu k ohnisku
-            double bRadius = minorAxisRadiusMeters; // Tvoje požadovaná šíøka v nejširším bodì
+            // 3. Matematika Elipsy (Hledï¿½me maximï¿½lnï¿½ dï¿½lku cesty pï¿½es bod P)
+            double c = distAB / 2.0; // Vzdï¿½lenost od stï¿½edu k ohnisku
+            double bRadius = minorAxisRadiusMeters; // Tvoje poï¿½adovanï¿½ ï¿½ï¿½ï¿½ka v nejï¿½irï¿½ï¿½m bodï¿½
 
-            // Vzorec pro elipsu: a^2 = b^2 + c^2 (kde 'a' je polovina délky provázku)
+            // Vzorec pro elipsu: a^2 = b^2 + c^2 (kde 'a' je polovina dï¿½lky provï¿½zku)
             double aAxis = Math.Sqrt(bRadius * bRadius + c * c);
 
-            // Maximální povolený souèet vzdáleností (Délka "provázku" elipsy)
+            // Maximï¿½lnï¿½ povolenï¿½ souï¿½et vzdï¿½lenostï¿½ (Dï¿½lka "provï¿½zku" elipsy)
             double maxAllowedPathLength = 2 * aAxis;
 
-            // 4. Finální zhodnocení: Je zajížïka pøes bod P v rámci budgetu naší elipsy?
+            // 4. Finï¿½lnï¿½ zhodnocenï¿½: Je zajï¿½ï¿½ka pï¿½es bod P v rï¿½mci budgetu naï¿½ï¿½ elipsy?
             return (distAP + distPB) <= maxAllowedPathLength;
         }
         private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;

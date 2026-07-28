@@ -9,5 +9,6 @@ namespace Routing.Application.Planning.Intents
         public double MaxDriveDistanceKm { get; init; }
         public bool AllowPrivateRoads { get; init; }
         public bool AllowGates { get; init; }
+        public bool AllowRestrictedZones { get; init; }
     }
 }

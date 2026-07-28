@@ -6,7 +6,6 @@ using System.Text.Json;
 using Routing.Infrastructure.GraphHopper.Mappings;
 using Routing.Infrastructure.GraphHopper.DTOs;
 using Routing.Infrastructure.GraphHopper.Builders;
-using Routing.Application.Planning.Intents;
 using Routing.Domain.Utilities;
 using System.Net.Http.Json;
 using Routing.Domain.ValueObjects; 
@@ -34,86 +33,42 @@ namespace Routing.Infrastructure.GraphHopper
             _graphHopperResponseMapper = graphHopperResponseMapper;
         }
         
-        public async Task<List<ProviderRoute>> GetRoutesAsync(RouteIntent intent, CancellationToken cancellationToken)
+        public async Task<List<ProviderRoute>> GetRoutesAsync(IReadOnlyList<Coordinate> points, RoutingPreferences preferences, CancellationToken cancellationToken)
         {
+            if (points is null || points.Count < 2)
+                throw new ArgumentException("At least two points are required.", nameof(points));
+
+            // GraphHopper's alternative_route algorithm only supports a plain start->end request -
+            // it doesn't support via-points/waypoints. Only offer it when there are none.
+            var hasWaypoints = points.Count > 2;
+
             var requestPayload = new GraphHopperRouteRequest
             {
-                Points = new[]
-                {
-                    new[] { intent.Start.Longitude, intent.Start.Latitude },
-                    new[] { intent.End.Longitude, intent.End.Latitude }
-                },
-                Profile = GraphHopperProfileBuilder.ResolveProfileName(intent),
-                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(intent),
+                Points = points.Select(p => new[] { p.Longitude, p.Latitude }).ToArray(),
+                Profile = GraphHopperProfileBuilder.ResolveProfileName(preferences),
+                CustomModel = GraphHopperProfileBuilder.BuildCustomModel(preferences),
                 Elevation = _graphHopperOptions.Elevation,
                 Instructions = _graphHopperOptions.Instructions,
                 CalcPoints = _graphHopperOptions.CalcPoints,
                 PointsEncoded = _graphHopperOptions.PointsEncoded,
                 Details = _graphHopperOptions.RequestedDetails,
-                Algorithm = _graphHopperOptions.Algorithm,
-                AlternativeRouteMaxPaths = _graphHopperOptions.AlternativeRouteMaxPaths,
-                AlternativeRouteMaxShareFactor = _graphHopperOptions.AlternativeRouteMaxShareFactor,
-                AlternativeRouteMaxWeightFactor = _graphHopperOptions.AlternativeRouteMaxWeightFactor,
+                Algorithm = hasWaypoints ? null : _graphHopperOptions.Algorithm,
+                AlternativeRouteMaxPaths = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxPaths,
+                AlternativeRouteMaxShareFactor = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxShareFactor,
+                AlternativeRouteMaxWeightFactor = hasWaypoints ? null : _graphHopperOptions.AlternativeRouteMaxWeightFactor,
                 ChDisable = _graphHopperOptions.ChDisable
             };
 
-            var dynamicTimeout = CalculateDynamicTimeout(intent.Start, intent.End);
-            var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
-
-            if (response?.Paths is null)
-                throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
-
-            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
-        }
-
-        public async Task<ProviderRoute> GetRouteAsync(Coordinate start, Coordinate end, IReadOnlyList<Coordinate> waypoints, CancellationToken cancellationToken)
-        {
-            // 1. Poskládání bodù pro okruh: Start -> Waypointy -> zpìt Start
-            var pointsList = new List<double[]>
-            {
-                new[] { start.Longitude, start.Latitude }
-            };
-
-            if (waypoints != null && waypoints.Any())
-            {
-                foreach (var wp in waypoints)
-                {
-                    pointsList.Add(new[] { wp.Longitude, wp.Latitude });
-                }
-            }
-
-            // Uzavøení smyèky pøidáním startovního bodu na konec
-            pointsList.Add(new[] { start.Longitude, start.Latitude });
-
-            var requestPayload = new GraphHopperRouteRequest
-            {
-                Points = pointsList.ToArray(),
-                Profile = "offroad_hardcore",
-                Elevation = _graphHopperOptions.Elevation,
-                Instructions = _graphHopperOptions.Instructions,
-                CalcPoints = _graphHopperOptions.CalcPoints,
-                PointsEncoded = _graphHopperOptions.PointsEncoded,
-                Details = _graphHopperOptions.RequestedDetails,
-                Algorithm = _graphHopperOptions.Algorithm,
-                AlternativeRouteMaxPaths = _graphHopperOptions.AlternativeRouteMaxPaths,
-                AlternativeRouteMaxShareFactor = _graphHopperOptions.AlternativeRouteMaxShareFactor,
-                AlternativeRouteMaxWeightFactor = _graphHopperOptions.AlternativeRouteMaxWeightFactor,
-                ChDisable = _graphHopperOptions.ChDisable
-            };
-
-            // 2. Oprava bugu: 'intent' zde neexistuje. 
-            // Pro timeout použijeme start a první waypoint (nebo opìt start, pokud waypointy nejsou).
-            var referencePointForTimeout = waypoints?.FirstOrDefault() ?? start;
-            var dynamicTimeout = CalculateDynamicTimeout(start, referencePointForTimeout);
-
+            // points[1] is intent.End for a plain 2-point route, and the first waypoint (or start
+            // itself, if there are none) for a loop. Not points[^1] - for a closed loop that's
+            // always the start again (distance 0), which would collapse the timeout to its minimum.
+            var dynamicTimeout = CalculateDynamicTimeout(points[0], points[1]);
             var response = await ExecuteRouteRequestAsync(requestPayload, dynamicTimeout, cancellationToken);
 
             if (response?.Paths is null || !response.Paths.Any())
                 throw new RoutingProviderException(RoutingProviderErrorCategory.InvalidResponse, "Missing paths in routing response.");
 
-            // 3. Oprava návratového typu: Metoda vrací jeden Task<ProviderRoute>, 
-            // proto bereme .First() a ne .ToList()
-            return _graphHopperResponseMapper.ToProviderRoute(response.Paths.First());
+            return response.Paths.Select(p => _graphHopperResponseMapper.ToProviderRoute(p)).ToList();
         }
 
         private async Task<GraphHopperRouteResponse?> ExecuteRouteRequestAsync(GraphHopperRouteRequest requestPayload, TimeSpan dynamicTimeout, CancellationToken cancellationToken)

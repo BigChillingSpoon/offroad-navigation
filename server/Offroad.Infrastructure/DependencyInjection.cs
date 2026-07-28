@@ -89,25 +89,30 @@ namespace Routing.Infrastructure
             services.AddSingleton<GraphHopperResponseMapper>();
 
             //DB CONTEXT
-            // Factory so parallel candidate generation can mint one fresh
-            services.AddDbContextFactory<ApplicationDbContext>(options =>
+            // Registering both AddDbContext and AddPooledDbContextFactory for the same context
+            // type conflicts (the factory needs DbContextOptions as effectively singleton-
+            // compatible; AddDbContext's own registration is scoped) - EF's design-time tooling
+            // rejects it outright. The documented fix: register only the factory, and derive the
+            // scoped ApplicationDbContext from it for single-shot, sequential consumers (the
+            // migration runner at startup). Consumers invoked concurrently within a single request
+            // (e.g. via Task.WhenAll in LoopCandidateGenerator) inject IDbContextFactory directly
+            // and create their own short-lived context per call instead - EF Core's DbContext is
+            // not thread-safe, so they can't share one instance across parallel branches.
+            services.AddPooledDbContextFactory<ApplicationDbContext>(options =>
                 options.UseNpgsql(
                     configuration.GetConnectionString("DefaultConnection"),
                     x => x.UseNetTopologySuite()
                 ));
 
-            // Keep a scoped ApplicationDbContext for single-threaded consumers
-            // (GisDataSeeder, migrations) that inject the context directly.
-            services.AddScoped<ApplicationDbContext>(sp =>
-                sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
+            services.AddScoped(sp => sp.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
             //GIS related
-            services.AddScoped<GisDataSeeder>();
             services.AddScoped<IGisService, GisService>();
 
             //Repositories
             services.AddSingleton<ITripRepository, InMemoryTripRepository>();
-            services.AddScoped<IHookpointRepository, HookpointRepository>();
+            services.AddScoped<INodeRepository, NodeRepository>();
+            services.AddScoped<IEdgeRepository, EdgeRepository>();
 
             return services;
         }
