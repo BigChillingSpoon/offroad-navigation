@@ -9,3 +9,6 @@ routing/graphhopper/data/
 /.claude
 /server/.idea
 /server/ai-context
+/server/.postman
+/server/postman
+/routing/scripts/*demo/

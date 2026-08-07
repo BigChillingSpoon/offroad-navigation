@@ -10,6 +10,7 @@ using Routing.Application.Routes.Queries;
 using Routing.Application.Loops.Queries;
 using Routing.Application.Loops;
 using Routing.Application.Planning.Candidates.Generators;
+using Routing.Application.Planning.Candidates.Arenas;
 using Routing.Application.Planning.Candidates.Scoring;
 using Routing.Application.Planning.Candidates.Selection;
 using Routing.Application.Planning.Intents;
@@ -68,6 +69,7 @@ namespace Routing.Domain
             services.AddScoped<ITripMapper<LoopTripCandidate>,LoopTripMapper>();
 
             //LOOP FINDERS
+            services.AddScoped<IArenaFinder, ArenaFinder>();
             services.AddScoped<ILoopDirectionPreference, SteepestDescentFirstPreference>();
             services.AddScoped<ILoopSkeletonFinder, LoopSkeletonFinder>();
             return services;

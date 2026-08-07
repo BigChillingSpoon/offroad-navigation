@@ -6,6 +6,7 @@ using Routing.Domain.ValueObjects;
 using Routing.Application.Planning.Exceptions;
 using Routing.Application.Planning.Encoding;
 using Routing.Application.Planning.Candidates.Builders;
+using Routing.Application.Planning.Candidates.Arenas;
 using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
 using Routing.Domain.Utilities;
@@ -22,25 +23,28 @@ namespace Routing.Application.Planning.Candidates.Generators
         private readonly INodeRepository _nodeRepository;
         private readonly IEdgeRepository _edgeRepository;
         private readonly ILoopSkeletonFinder _skeletonFinder;
+        private readonly IArenaFinder _arenaFinder;
 
         public LoopCandidateGenerator(
             IRoutingProvider routingProvider,
             IRestrictedZoneBuilder restrictedZoneBuilder,
             INodeRepository nodeRepository,
             IEdgeRepository edgeRepository,
-            ILoopSkeletonFinder skeletonFinder)
+            ILoopSkeletonFinder skeletonFinder,
+            IArenaFinder arenaFinder)
         {
             _routingProvider = routingProvider;
             _restrictedZoneBuilder = restrictedZoneBuilder;
             _nodeRepository = nodeRepository;
             _edgeRepository = edgeRepository;
             _skeletonFinder = skeletonFinder;
+            _arenaFinder = arenaFinder;
         }
 
         public async Task<IReadOnlyList<LoopTripCandidate>> GenerateCandidatesAsync(LoopIntent intent, CancellationToken ct)
         {
             // 1. GET ALL SUITABLE OFFROAD ENTRANCES
-            var entrances = await GetMostSuitableEntrancesAsync(intent.Start, intent.MaxDriveDistanceKm, maxEntrances: 3, ct);
+            var entrances = await _arenaFinder.FindEntrancesAsync(intent.Start, intent.PreferredLengthKm, intent.MaxDriveDistanceKm, maxEntrances: 3, ct);
             if (!entrances.Any())
                 return Array.Empty<LoopTripCandidate>();
 
@@ -101,13 +105,6 @@ namespace Routing.Application.Planning.Candidates.Generators
                 .ToList();
         }
 
-        private async Task<IReadOnlyList<Coordinate>> GetMostSuitableEntrancesAsync(Coordinate userStart, double maxDriveDistanceKm, int maxEntrances, CancellationToken ct)
-        {
-            // TODO: Create smart arena finder
-            return new List<Coordinate> { userStart };
-        }
-
-       
         private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, Coordinate entranceCoordinate, int index)
         {
             var geometry = GetValidGeometry(route.Polyline);
