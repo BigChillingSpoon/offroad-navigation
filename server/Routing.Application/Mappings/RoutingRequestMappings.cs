@@ -32,7 +32,6 @@ public static class RoutingRequestMappings
             MaxDriveDistanceKm = request.MaxDriveDistanceKm,
             AllowPrivateRoads = request.AllowPrivateRoads,
             AllowGates = request.AllowGates,
-            AllowRestrictedZones = request.AllowRestrictedZones,
         };
 
     public static UserRoutingProfile ToUserProfile(this FindLoopsRequest request)

@@ -49,7 +49,11 @@ namespace Routing.Domain
 
             //SELECTORS
             services.AddScoped<ICandidateSelector<RouteIntent, TripCandidate>, PassThroughCandidateSelector<RouteIntent, TripCandidate>>();
-            services.AddScoped<ICandidateSelector<LoopIntent, LoopTripCandidate>, LoopEntranceSelector>();
+            // Loops no longer need per-entrance dedup: the skeleton finder already returns distinct
+            // non-overlapping loops per arena, and arenas are spatially separated, so every goal-passing
+            // candidate is a genuine result. (Was LoopEntranceSelector, back when one entrance produced
+            // several competing GraphHopper attempts at the same loop.)
+            services.AddScoped<ICandidateSelector<LoopIntent, LoopTripCandidate>, PassThroughCandidateSelector<LoopIntent, LoopTripCandidate>>();
 
             //GOALS
             services.AddScoped<ITripGoal<LoopIntent, LoopTripCandidate>, LoopGoal>();
@@ -70,7 +74,6 @@ namespace Routing.Domain
 
             //LOOP FINDERS
             services.AddScoped<IArenaFinder, ArenaFinder>();
-            services.AddScoped<ILoopDirectionPreference, SteepestDescentFirstPreference>();
             services.AddScoped<ILoopSkeletonFinder, LoopSkeletonFinder>();
             return services;
         }

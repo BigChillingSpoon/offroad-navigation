@@ -8,6 +8,7 @@ public interface INodeRepository
     Task<IReadOnlyList<Node>> GetNodesNearAsync(
         Coordinate center,
         double radiusMeters,
+        int maxNodes,
         CancellationToken ct);
 
     /// <summary>
@@ -25,6 +26,7 @@ public interface INodeRepository
         double driveRadiusMeters,
         double loopReachMeters,
         double minOffroadLengthMeters,
+        double rankingLengthBlend,
         int limit,
         CancellationToken ct);
 }

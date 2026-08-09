@@ -51,6 +51,19 @@ public class Edge : BaseEntity
     public bool IsOffroad { get; private set; }
 
     /// <summary>
+    /// OSM tracktype difficulty, 1 (smooth/solid) to 5 (barely passable); 0 when unknown/not a graded
+    /// track. Used by the skeleton search as a hard vehicle limit (a normal car cannot take grade-5)
+    /// and as a soft terrain preference. Parsed from gis.edges.tracktype ('grade1'..'grade5').
+    /// </summary>
+    public byte Grade { get; private set; }
+
+    /// <summary>
+    /// OSM highway class ('track', 'unclassified', ...) - GraphHopper's road_class. Used to match its
+    /// national-park rule, which forbids only tracks inside a park. Empty when unknown.
+    /// </summary>
+    public string Highway { get; private set; } = string.Empty;
+
+    /// <summary>
     /// The edge's full geometry, ordered from Source to Target (matching how gis.edges.geom is stored -
     /// pgr_createTopology and the merge step in build_routing_graph.sh both guarantee ST_StartPoint
     /// corresponds to SourceNodeId and ST_EndPoint to TargetNodeId). Used to derive the real
@@ -73,7 +86,9 @@ public class Edge : BaseEntity
         bool isRestricted,
         double elevationGainMeters,
         bool isOffroad,
-        IReadOnlyList<Coordinate>? geometry = null)
+        IReadOnlyList<Coordinate>? geometry = null,
+        byte grade = 0,
+        string? highway = null)
     {
         Id = id;
         SourceNodeId = sourceNodeId;
@@ -85,5 +100,7 @@ public class Edge : BaseEntity
         ElevationGainMeters = elevationGainMeters;
         IsOffroad = isOffroad;
         Geometry = geometry ?? Array.Empty<Coordinate>();
+        Grade = grade;
+        Highway = highway ?? string.Empty;
     }
 }

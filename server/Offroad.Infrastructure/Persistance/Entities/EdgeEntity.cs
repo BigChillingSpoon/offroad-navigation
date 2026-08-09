@@ -31,4 +31,15 @@ public sealed class EdgeEntity
     public bool IsRestricted { get; set; }
     public double ElevationGainMeters { get; set; }
     public bool IsOffroad { get; set; }
+
+    /// <summary>
+    /// OSM tracktype grade ('grade1'..'grade5') or null. Parsed into <see cref="Routing.Domain.Entities.Edge.Grade"/>.
+    /// </summary>
+    public string? TrackType { get; set; }
+
+    /// <summary>
+    /// OSM highway class ('track', 'unclassified', ...). GraphHopper's road_class; used to apply its
+    /// national-park rule (in_cz_parks &amp;&amp; road_class == TRACK) to tracks only.
+    /// </summary>
+    public string? Highway { get; set; }
 }

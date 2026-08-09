@@ -432,6 +432,13 @@ psql -v ON_ERROR_STOP=1 -h $DB_HOST -p $DB_PORT -U $DB_USER -d $DB_NAME << 'EOF'
     WHERE node_id IN (SELECT node_id FROM valid_trailheads);
 EOF
 
+echo "Step 6.5/7: Syncing restricted areas (national parks) between DB and GraphHopper..."
+# Load the curated park polygons into gis.geometric_zones, re-flag edge.is_restricted,
+# and export the DB's zones back out to GH's custom area, so the skeleton search and GH
+# block the exact same parks (otherwise GH rejects park loops with ConnectionNotFound).
+DB_HOST="$DB_HOST" DB_PORT="$DB_PORT" DB_NAME="$DB_NAME" DB_USER="$DB_USER" \
+    bash "$(dirname "$0")/sync_restricted_areas.sh"
+
 echo "Step 7/7: Backing Up Database..."
 # This lives on the host filesystem, outside the Docker volume, so it survives
 # a "docker compose down -v" (which deletes the pgdata volume completely -
