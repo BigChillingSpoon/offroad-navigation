@@ -9,6 +9,9 @@ namespace Routing.Domain.Entities;
 /// </summary>
 public class Edge : BaseEntity
 {
+    /// <summary>OSM highway class that marks a forestry/field track (the routing provider's TRACK road_class).</summary>
+    private const string TrackHighwayClass = "track";
+
     /// <summary>
     /// The ID of the node where the edge starts.
     /// </summary>
@@ -51,6 +54,11 @@ public class Edge : BaseEntity
     public bool IsOffroad { get; private set; }
 
     /// <summary>
+    /// This edge's length when it is offroad, else 0 - the offroad contribution to a path's total.
+    /// </summary>
+    public double OffroadLengthMeters => IsOffroad ? LengthMeters : 0;
+
+    /// <summary>
     /// OSM tracktype difficulty, 1 (smooth/solid) to 5 (barely passable); 0 when unknown/not a graded
     /// track. Used by the skeleton search as a hard vehicle limit (a normal car cannot take grade-5)
     /// and as a soft terrain preference. Parsed from gis.edges.tracktype ('grade1'..'grade5').
@@ -58,10 +66,17 @@ public class Edge : BaseEntity
     public byte Grade { get; private set; }
 
     /// <summary>
-    /// OSM highway class ('track', 'unclassified', ...) - GraphHopper's road_class. Used to match its
-    /// national-park rule, which forbids only tracks inside a park. Empty when unknown.
+    /// OSM highway class ('track', 'unclassified', ...) - the routing provider's road_class. Used to
+    /// match its national-park and car-access rules, which key off the track class. Empty when unknown.
     /// </summary>
     public string Highway { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// True when this edge is an OSM highway=track. Deliberately distinct from <see cref="IsOffroad"/>
+    /// (a broader surface/grade flag): the routing provider's national-park and car-access rules forbid
+    /// specifically the track road_class, so the skeleton graph must match on the class, not on terrain.
+    /// </summary>
+    public bool IsTrack => string.Equals(Highway, TrackHighwayClass, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
     /// The edge's full geometry, ordered from Source to Target (matching how gis.edges.geom is stored -

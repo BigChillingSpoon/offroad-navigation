@@ -21,6 +21,31 @@ public class LoopSkeletonFinderTests
     private static SkeletonSearchOptions AllowAll(byte maxGrade = 5) =>
         new(AllowGates: true, AllowPrivateRoads: true, MaxGrade: maxGrade);
 
+    // The plain closed square whose only loop is Start -> A -> B -> C -> Start, with the A->B edge
+    // swapped for the supplied one. Admitting or dropping that single edge decides between exactly one
+    // skeleton and none, which is what the access-rule tests below assert.
+    private static (Node Start, List<Node> Nodes, List<Edge> Edges) SquareWithAbEdge(Edge abEdge)
+    {
+        var startNode = new Node(StartId, new Coordinate(50.000, 14.000), isEntryPoint: true);
+        var nodeA = new Node(AId, new Coordinate(50.001, 14.000), isEntryPoint: false);
+        var nodeB = new Node(BId, new Coordinate(50.001, 14.001), isEntryPoint: false);
+        var nodeC = new Node(CId, new Coordinate(50.000, 14.001), isEntryPoint: false);
+        var nodes = new List<Node> { startNode, nodeA, nodeB, nodeC };
+
+        var edges = new List<Edge>
+        {
+            new(101, StartId, AId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            abEdge,
+            new(103, BId, CId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(104, CId, StartId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+        };
+
+        return (startNode, nodes, edges);
+    }
+
+    private static SkeletonSearchOptions Options(bool allowGates = true, bool allowPrivateRoads = true) =>
+        new(AllowGates: allowGates, AllowPrivateRoads: allowPrivateRoads);
+
     [Fact]
     public void FindSkeletons_SingleSquareLoop_ReturnsOneSkeleton()
     {
@@ -33,10 +58,10 @@ public class LoopSkeletonFinderTests
 
         var edges = new List<Edge>
         {
-            new(101, StartId, AId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(103, BId, CId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(104, CId, StartId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
+            new(101, StartId, AId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(103, BId, CId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(104, CId, StartId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
         };
 
         // Act
@@ -59,10 +84,10 @@ public class LoopSkeletonFinderTests
 
         var edges = new List<Edge>
         {
-            new(101, StartId, AId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(103, BId, CId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
-            new(104, CId, StartId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false),
+            new(101, StartId, AId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(103, BId, CId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
+            new(104, CId, StartId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true),
         };
 
         // Act
@@ -103,18 +128,18 @@ public class LoopSkeletonFinderTests
         {
             // Straight: Start -> A.
             new(301, startId, aId, 111.19,
-                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false,
+                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true,
                 geometry: new List<Coordinate> { start, a }),
 
             // Curved: A -> B via an interior vertex ("mid") that keeps the real departure tangent
             // near A close to a straight continuation, even though the edge swings sharply afterwards.
             new(302, aId, bId, 122.31,
-                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false,
+                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true,
                 geometry: new List<Coordinate> { a, mid, b }),
 
             // Closing: B -> Start, colinear with the curve's arrival tangent (zero closing turn).
             new(303, bId, startId, 97.82,
-                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: false,
+                hasBarrier: false, hasNoEntry: false, isRestricted: false, elevationGainMeters: 0, isOffroad: true,
                 geometry: new List<Coordinate> { b, start }),
         };
 
@@ -251,5 +276,80 @@ public class LoopSkeletonFinderTests
         var southWest = new HashSet<Coordinate> { q1, q2, q3 };
         Assert.Contains(result, r => r.Waypoints.All(north.Contains));
         Assert.Contains(result, r => r.Waypoints.All(southWest.Contains));
+    }
+
+    [Fact]
+    public void FindSkeletons_NoEntryNonTrackEdge_IsAlwaysExcluded()
+    {
+        // A car-inaccessible road that is NOT a track is one the routing provider won't route, so it is
+        // dropped even when private roads are allowed - severing the only loop.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: true,
+            isRestricted: false, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "unclassified");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Empty(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, AllowAll()));
+    }
+
+    [Fact]
+    public void FindSkeletons_NoEntryTrackEdge_IsKeptOnlyWhenPrivateRoadsAllowed()
+    {
+        // A car-inaccessible TRACK stays routable (the provider routes tracks), but it is still a private
+        // road, so it is admitted only when private roads are allowed.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: true,
+            isRestricted: false, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "track");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Empty(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowPrivateRoads: false)));
+        Assert.Single(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowPrivateRoads: true)));
+    }
+
+    [Fact]
+    public void FindSkeletons_RestrictedParkTrack_IsExcludedUnlessPrivateRoadsAllowed()
+    {
+        // National-park rule mirrors the routing provider: a TRACK inside a park is blocked unless the
+        // user opts into private/restricted roads.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false,
+            isRestricted: true, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "track");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Empty(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowPrivateRoads: false)));
+        Assert.Single(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowPrivateRoads: true)));
+    }
+
+    [Fact]
+    public void FindSkeletons_RestrictedNonTrackInPark_StaysRoutable()
+    {
+        // Alignment edge case: the routing provider's national-park rule blocks only the TRACK road_class,
+        // so a restricted NON-track road (e.g. a gravel unclassified road - offroad, but not a track)
+        // inside a park stays routable even with private roads disallowed. Keying this off IsOffroad
+        // instead of IsTrack would wrongly drop it and diverge from the provider.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false,
+            isRestricted: true, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "unclassified");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Single(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowPrivateRoads: false)));
+    }
+
+    [Fact]
+    public void FindSkeletons_NonRoutableHighwayEdge_IsExcluded()
+    {
+        // A class the routing provider cannot route (e.g. highway=path) is dropped, severing the only loop.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: false, hasNoEntry: false,
+            isRestricted: false, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "path");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Empty(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, AllowAll()));
+    }
+
+    [Fact]
+    public void FindSkeletons_BarrierEdge_IsKeptOnlyWhenGatesAllowed()
+    {
+        // A gated edge is admitted only when the user allows gates.
+        var abEdge = new Edge(102, AId, BId, EdgeLengthMeters, hasBarrier: true, hasNoEntry: false,
+            isRestricted: false, elevationGainMeters: 0, isOffroad: true, geometry: null, grade: 0, highway: "track");
+        var (start, nodes, edges) = SquareWithAbEdge(abEdge);
+
+        Assert.Empty(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowGates: false)));
+        Assert.Single(_sut.FindSkeletons(start, nodes, edges, TargetLoopDistanceMeters, Options(allowGates: true)));
     }
 }

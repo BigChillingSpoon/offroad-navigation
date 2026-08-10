@@ -22,12 +22,12 @@ namespace Routing.Application.Planning.Goals
                     return false;
             }
 
-            // The skeleton search already targeted this distance band before GraphHopper was involved;
-            // re-check it here because GraphHopper's real geometry can land outside it (different snapping,
+            // The skeleton search already targeted this distance band before the routing provider was
+            // involved; re-check it here because the provider's real geometry can land outside it (snapping,
             // road-network detail the skeleton's graph didn't have, etc.).
             var targetDistanceMeters = intent.PreferredLengthKm * 1000;
-            var minDistanceMeters = targetDistanceMeters * LoopDistanceTolerance.MinFraction;
-            var maxDistanceMeters = targetDistanceMeters * LoopDistanceTolerance.MaxFraction;
+            var minDistanceMeters = targetDistanceMeters * LoopGenerationSettings.GoalMinFraction;
+            var maxDistanceMeters = targetDistanceMeters * LoopGenerationSettings.GoalMaxFraction;
 
             if (candidate.TotalDistanceMeters < minDistanceMeters || candidate.TotalDistanceMeters > maxDistanceMeters)
                 return false;

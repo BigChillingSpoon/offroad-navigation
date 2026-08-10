@@ -11,7 +11,6 @@ using Routing.Application.Planning.Extensions;
 using Routing.Application.Planning.DEBUG;
 using Routing.Domain.Utilities;
 using Routing.Domain.Entities;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Routing.Application.Abstractions.Persistence;
 using Routing.Application.Planning.Skeletons.Services;
@@ -21,17 +20,6 @@ namespace Routing.Application.Planning.Candidates.Generators
 {
     public sealed class LoopCandidateGenerator : ICandidateGenerator<LoopIntent, LoopTripCandidate>
     {
-        // How close to the requested entrance the (well-connected) start node must be. Keeps the loop
-        // anchored near the chosen arena while allowing us to pick a better-connected junction than the
-        // single nearest node.
-        private const double StartNodeSearchRadiusMeters = 300.0;
-
-        // Cap on the number of (nearest) nodes fetched per arena. A round loop stays near its start, so
-        // for big loops the Lmax/2 fetch radius would otherwise pull thousands of far nodes that only
-        // bloat and slow the skeleton search. Bounds the graph the finder works on, keeping big-loop
-        // searches fast; small arenas contain fewer nodes than this anyway.
-        private const int ArenaMaxNodes = 700;
-
         private readonly IRoutingProvider _routingProvider;
         private readonly IRestrictedZoneBuilder _restrictedZoneBuilder;
         private readonly INodeRepository _nodeRepository;
@@ -75,136 +63,71 @@ namespace Routing.Application.Planning.Candidates.Generators
                 return Array.Empty<LoopTripCandidate>();
 
             // 4. PARALLELY GENERATE CANDIDATES FOR ALL SKELETONS
-            var attemptTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, intent, index, ct));
-            var attempts = await Task.WhenAll(attemptTasks);
+            var candidateTasks = allSkeletons.Select((skeleton, index) => GenerateSingleCandidateAsync(skeleton, intent, index, ct));
+            var candidates = await Task.WhenAll(candidateTasks);
 
-            // Consolidated per-request analysis dump (skeleton length vs GH-routed length vs goal band
-            // for every candidate, plus summary counts) - so it's clear why N created but only M returned.
-            WriteLoopReport(intent, entrances.Count, attempts.Select(a => a.Debug).ToList());
+            LoopPlanningDebug.WriteReport(intent, entrances.Count, allSkeletons, candidates, _logger);
 
-            return attempts.Where(a => a.Candidate is not null).Select(a => a.Candidate!).ToList();
+            return candidates.Where(c => c is not null).Select(c => c!).ToList();
         }
 
-        private async Task<CandidateAttempt> GenerateSingleCandidateAsync(LoopSkeleton skeleton, LoopIntent intent, int index, CancellationToken ct)
+        private async Task<LoopTripCandidate?> GenerateSingleCandidateAsync(LoopSkeleton skeleton, LoopIntent intent, int index, CancellationToken ct)
         {
             var points = BuildLoopPoints(skeleton);
+            LoopPlanningDebug.DumpSkeleton(points, skeleton, index);
             try
             {
                 var routes = await _routingProvider.GetRoutesAsync(points, intent.ToRoutingPreferences(), ct);
-                var candidate = await MapToCandidateAsync(routes.First(), intent, skeleton.Entrance, index);
-                var debug = new LoopCandidateDebug(
-                    index, skeleton.Entrance.Latitude, skeleton.Entrance.Longitude,
-                    skeleton.TraveledDistanceKm,
-                    candidate.TotalDistanceMeters / 1000.0,
-                    (int)Math.Round(candidate.OffroadRatio * 100),
-                    candidate.ElevationGainMeters,
-                    Verdict(candidate.TotalDistanceMeters, intent));
-                return new CandidateAttempt(candidate, debug);
+                var candidate = await MapToCandidateAsync(routes.First(), skeleton.Entrance);
+                LoopPlanningDebug.DumpRoutedLoop(candidate, intent, skeleton.Entrance, index);
+                return candidate;
             }
             catch (RoutingProviderException ex)
             {
-                // One skeleton that GraphHopper can't stitch (e.g. our graph has an offroad link GH's
+                // One skeleton the routing provider can't route (e.g. our graph has a link the provider's
                 // routing graph doesn't) must not sink the whole request - drop just this loop and keep
-                // the others. Log the exact points and dump a GPX so the failing route can be replayed.
+                // the others.
                 _logger.LogWarning(ex,
-                    "Loop skeleton {Index} from entrance {Lat},{Lon} ({PointCount} waypoints) failed routing: {Category}. Points: {Points}",
-                    index, skeleton.Entrance.Latitude, skeleton.Entrance.Longitude, points.Count, ex.ErrorCathegory,
-                    string.Join(" | ", points.Select(p => $"{p.Latitude:F6},{p.Longitude:F6}")));
-                points.LogToGPX(
-                    $"./debug_failed_skeleton_{index}_{skeleton.TraveledDistanceKm:F1}km_ROUTING-FAILED.gpx",
-                    name: $"skeleton #{index} FAILED routing ({skeleton.TraveledDistanceKm:F2}km) - {ex.ErrorCathegory}",
-                    description: $"entrance {skeleton.Entrance.Latitude:F5},{skeleton.Entrance.Longitude:F5}; {points.Count} waypoints; {ex.Message}");
-                var debug = new LoopCandidateDebug(
-                    index, skeleton.Entrance.Latitude, skeleton.Entrance.Longitude,
-                    skeleton.TraveledDistanceKm, RoutedKm: null, OffroadPct: null, AscendM: null, Verdict: "ROUTING-FAILED");
-                return new CandidateAttempt(null, debug);
+                    "Loop skeleton {Index} from entrance {Lat},{Lon} ({PointCount} waypoints) failed routing: {Category}.",
+                    index, skeleton.Entrance.Latitude, skeleton.Entrance.Longitude, points.Count, ex.ErrorCathegory);
+                LoopPlanningDebug.DumpFailedSkeleton(points, skeleton, ex, index);
+                return null;
             }
-        }
-
-        // Predicts LoopGoal's distance-band decision (the dominant reason candidates get discarded).
-        private static string Verdict(double routedMeters, LoopIntent intent)
-        {
-            var target = intent.PreferredLengthKm * 1000;
-            var min = target * LoopDistanceTolerance.MinFraction;
-            var max = target * LoopDistanceTolerance.MaxFraction;
-            return routedMeters >= min && routedMeters <= max ? "INBAND" : "OUTOFBAND";
-        }
-
-        private sealed record LoopCandidateDebug(
-            int Index, double EntranceLat, double EntranceLon, double SkeletonKm,
-            double? RoutedKm, int? OffroadPct, double? AscendM, string Verdict);
-
-        private sealed record CandidateAttempt(LoopTripCandidate? Candidate, LoopCandidateDebug Debug);
-
-        // Writes one JSON analysis report per request: request params, goal band, and every candidate's
-        // skeleton length vs GraphHopper-routed length vs verdict, plus summary counts (created / in-band
-        // / out-of-band / routing-failed). DEBUG-only, stripped from Release.
-        [System.Diagnostics.Conditional("DEBUG")]
-        private void WriteLoopReport(LoopIntent intent, int entrancesSelected, IReadOnlyList<LoopCandidateDebug> debugs)
-        {
-            var target = intent.PreferredLengthKm * 1000;
-            var report = new
-            {
-                timestamp = DateTime.Now.ToString("o"),
-                request = new
-                {
-                    intent.Start.Latitude,
-                    intent.Start.Longitude,
-                    intent.PreferredLengthKm,
-                    intent.MaxDriveDistanceKm,
-                    intent.AllowPrivateRoads,
-                    intent.AllowGates
-                },
-                goalBandMeters = new { min = target * LoopDistanceTolerance.MinFraction, max = target * LoopDistanceTolerance.MaxFraction },
-                entrancesSelected,
-                summary = new
-                {
-                    skeletonsCreated = debugs.Count,
-                    routedOk = debugs.Count(d => d.RoutedKm.HasValue),
-                    routingFailed = debugs.Count(d => d.Verdict == "ROUTING-FAILED"),
-                    returnedInBand = debugs.Count(d => d.Verdict == "INBAND"),
-                    discardedOutOfBand = debugs.Count(d => d.Verdict == "OUTOFBAND")
-                },
-                candidates = debugs.OrderBy(d => d.Index).Select(d => new
-                {
-                    d.Index,
-                    entrance = new[] { d.EntranceLat, d.EntranceLon },
-                    d.SkeletonKm,
-                    d.RoutedKm,
-                    d.OffroadPct,
-                    d.AscendM,
-                    d.Verdict
-                })
-            };
-
-            var file = $"./debug_loop_report_{DateTime.Now:yyyyMMdd_HHmmss_fff}.json";
-            File.WriteAllText(file, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
-            _logger.LogInformation(
-                "Loop report {File}: target {TargetKm}km, {Entrances} entrances, {Created} skeletons -> {InBand} returned (in-band), {Out} discarded (out-of-band), {Failed} routing-failed.",
-                file, intent.PreferredLengthKm, entrancesSelected, report.summary.skeletonsCreated,
-                report.summary.returnedInBand, report.summary.discardedOutOfBand, report.summary.routingFailed);
         }
 
         private static IReadOnlyList<Coordinate> BuildLoopPoints(LoopSkeleton skeleton)
         {
-            var points = new List<Coordinate> { skeleton.Entrance };
-            points.AddRange(skeleton.Waypoints);
-            points.Add(skeleton.Entrance);
+            var path = skeleton.Geometry;
+            if (path.Count <= 2)
+                return path;
+
+            var total = GeoCalculator.CalculatePathDistance(path);
+            var spacing = Math.Max(LoopGenerationSettings.RoutePointSpacingMeters, total / Math.Max(1, LoopGenerationSettings.MaxRoutePoints - 1));
+
+            var points = new List<Coordinate> { path[0] };
+            var accumulated = 0.0;
+            for (var i = 1; i < path.Count - 1; i++)
+            {
+                accumulated += GeoCalculator.CalculateDistance(path[i - 1], path[i]);
+                if (accumulated < spacing)
+                    continue;
+                points.Add(path[i]);
+                accumulated = 0.0;
+            }
+            points.Add(path[^1]); // entrance again - closes the loop
             return points;
         }
 
         private async Task<IReadOnlyList<LoopSkeleton>> ProcessArenaAsync(Coordinate entrance, LoopIntent intent, CancellationToken ct)
         {
-            // 1. ARENA SELECTION & SINGLE DB FETCH: nodes within the arena radius, then only the
-            // edges that connect two of those nodes (guarantees a fully-resolvable graph). The radius
-            // matches the skeleton search's own reachability bound (Holy Circle H4 = Lmax/2), so every
-            // node the search could legitimately use is fetched - a plain L/2 left out the outer band
-            // and starved short-loop arenas of graph.
-            var arenaRadiusMeters = intent.PreferredLengthKm * 1000 * LoopDistanceTolerance.MaxFraction / 2;
+            // Fetch the nodes within the arena radius, then only the edges connecting two of those nodes
+            // (guarantees a fully-resolvable graph). The radius matches the skeleton search's own
+            // reachability bound (Lmax/2), so every node the search could legitimately use is fetched.
+            var arenaRadiusMeters = intent.PreferredLengthKm * 1000 * LoopGenerationSettings.GoalMaxFraction / 2;
             var arenaNodes = await _nodeRepository.GetNodesNearAsync(
                 entrance,
                 arenaRadiusMeters,
-                ArenaMaxNodes,
+                LoopGenerationSettings.ArenaMaxNodes,
                 ct);
 
             if (!arenaNodes.Any())
@@ -233,11 +156,10 @@ namespace Routing.Application.Planning.Candidates.Generators
                 .SelectMany(e => new[] { e.SourceNodeId, e.TargetNodeId })
                 .GroupBy(id => id)
                 .ToDictionary(g => g.Key, g => g.Count());
-            int Degree(long id) => degreeByNode.TryGetValue(id, out var d) ? d : 0;
 
             var wellConnectedStart = arenaNodes
-                .Where(n => GeoCalculator.CalculateDistance(n.Coordinate, entrance) <= StartNodeSearchRadiusMeters)
-                .OrderByDescending(n => Degree(n.Id))
+                .Where(n => GeoCalculator.CalculateDistance(n.Coordinate, entrance) <= LoopGenerationSettings.StartNodeSearchRadiusMeters)
+                .OrderByDescending(n => degreeByNode.GetValueOrDefault(n.Id))
                 .ThenBy(n => GeoCalculator.CalculateDistance(n.Coordinate, entrance))
                 .FirstOrDefault();
 
@@ -247,7 +169,7 @@ namespace Routing.Application.Planning.Candidates.Generators
             return _skeletonFinder.FindSkeletons(wellConnectedStart, arenaNodes, arenaEdges, targetMeters, options).ToList();
         }
 
-        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, LoopIntent intent, Coordinate entranceCoordinate, int index)
+        private async Task<LoopTripCandidate> MapToCandidateAsync(ProviderRoute route, Coordinate entranceCoordinate)
         {
             var geometry = GetValidGeometry(route.Polyline);
 
@@ -273,33 +195,7 @@ namespace Routing.Application.Planning.Candidates.Generators
                     estimatedTransitDistanceMeters: default,
                     entranceCoordinate: entranceCoordinate);
 
-            WriteCandidateDebugGpx(geometry, candidate, intent, entranceCoordinate, index);
-
             return candidate;
-        }
-
-        // Dumps the routed loop to a GPX whose name/filename say which loop it is and whether it will
-        // survive the goal - most candidates get discarded there for landing outside the distance band,
-        // and a bare "debug_loop_candidate_N.gpx" made them impossible to tell apart in QGIS.
-        [System.Diagnostics.Conditional("DEBUG")]
-        private static void WriteCandidateDebugGpx(IReadOnlyList<Coordinate> geometry, LoopTripCandidate candidate, LoopIntent intent, Coordinate entrance, int index)
-        {
-            var targetMeters = intent.PreferredLengthKm * 1000;
-            var minMeters = targetMeters * LoopDistanceTolerance.MinFraction;
-            var maxMeters = targetMeters * LoopDistanceTolerance.MaxFraction;
-            var inBand = candidate.TotalDistanceMeters >= minMeters && candidate.TotalDistanceMeters <= maxMeters;
-            var verdict = inBand ? "INBAND" : "OUTOFBAND"; // predicts the LoopGoal distance check
-            var offroadPct = (int)Math.Round(candidate.OffroadRatio * 100);
-            var km = candidate.TotalDistanceMeters / 1000.0;
-
-            var name = $"loop #{index} - {km:F2}km (target {intent.PreferredLengthKm:F1}km) - offroad {offroadPct}% - {verdict}";
-            var description =
-                $"entrance {entrance.Latitude:F5},{entrance.Longitude:F5}; " +
-                $"routed {candidate.TotalDistanceMeters:F0}m; goal band {minMeters:F0}-{maxMeters:F0}m; " +
-                $"ascend {candidate.ElevationGainMeters:F0}m; verdict {verdict} " +
-                (inBand ? "(kept)" : "(discarded by goal: distance out of band)");
-
-            geometry.LogToGPX($"./debug_loop_candidate_{index}_{km:F1}km_offroad{offroadPct}_{verdict}.gpx", name, description);
         }
 
         private IReadOnlyList<Coordinate> GetValidGeometry(EncodedPolyline polyline)

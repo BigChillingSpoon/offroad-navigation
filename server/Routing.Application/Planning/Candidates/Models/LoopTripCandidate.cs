@@ -11,8 +11,7 @@ namespace Routing.Application.Planning.Candidates.Models
 
         /// <summary>
         /// The entrance this candidate was generated from. Several candidates can share the same
-        /// entrance (multiple skeleton attempts sent to GraphHopper individually) - LoopCandidateScorer
-        /// uses this to keep only the best one per entrance.
+        /// entrance, since one arena can yield multiple distinct non-overlapping loops.
         /// </summary>
         public Coordinate EntranceCoordinate { get; }
 

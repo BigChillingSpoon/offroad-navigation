@@ -11,6 +11,10 @@ namespace Routing.Domain.Utilities
     {
         private const double EarthRadiusMeters = 6_371_000;
 
+        // WGS84 average metres per degree, used for local flat-earth projections over small areas.
+        private const double MetersPerDegreeLatitude = 111_132.92;
+        private const double MetersPerDegreeLongitudeAtEquator = 111_412.84;
+
         /// <summary>
         /// Calculates the total distance of a path defined by a sequence of coordinates.
         /// </summary>
@@ -179,8 +183,8 @@ namespace Routing.Domain.Utilities
         {
             // 1. Rychl� Flat-Earth projekce (na metry)
             double latMid = DegreesToRadians(a.Latitude);
-            double metersPerDegreeLat = 111132.92;
-            double metersPerDegreeLon = 111412.84 * Math.Cos(latMid);
+            double metersPerDegreeLat = MetersPerDegreeLatitude;
+            double metersPerDegreeLon = MetersPerDegreeLongitudeAtEquator * Math.Cos(latMid);
 
             // Kart�zsk� sou�adnice (A je po��tek [0,0])
             double bx = (b.Longitude - a.Longitude) * metersPerDegreeLon;
@@ -208,6 +212,47 @@ namespace Routing.Domain.Utilities
             // 4. Fin�ln� zhodnocen�: Je zaj��ka p�es bod P v r�mci budgetu na�� elipsy?
             return (distAP + distPB) <= maxAllowedPathLength;
         }
+        /// <summary>
+        /// Roundness of a closed polygon of coordinates, as the isoperimetric quotient
+        /// 4*pi*Area / Perimeter^2 in [0, 1]: 1 for a perfect circle, approaching 0 for a thin sliver.
+        /// Uses a local equirectangular projection to metres, which is accurate for the small area of a
+        /// single loop. Returns 0 for degenerate input (fewer than 3 vertices or zero perimeter).
+        /// </summary>
+        public static double CalculateRoundness(IReadOnlyList<Coordinate> polygon)
+        {
+            if (polygon == null || polygon.Count < 3)
+                return 0;
+
+            var origin = polygon[0];
+            var metersPerDegreeLon = MetersPerDegreeLongitudeAtEquator * Math.Cos(DegreesToRadians(origin.Latitude));
+
+            var eastingMeters = new double[polygon.Count];
+            var northingMeters = new double[polygon.Count];
+            for (var i = 0; i < polygon.Count; i++)
+            {
+                eastingMeters[i] = (polygon[i].Longitude - origin.Longitude) * metersPerDegreeLon;
+                northingMeters[i] = (polygon[i].Latitude - origin.Latitude) * MetersPerDegreeLatitude;
+            }
+
+            double doubleSignedArea = 0;
+            double perimeterMeters = 0;
+            for (var i = 0; i < polygon.Count; i++)
+            {
+                var next = (i + 1) % polygon.Count;
+                doubleSignedArea += eastingMeters[i] * northingMeters[next] - eastingMeters[next] * northingMeters[i];
+                var deltaEast = eastingMeters[next] - eastingMeters[i];
+                var deltaNorth = northingMeters[next] - northingMeters[i];
+                perimeterMeters += Math.Sqrt(deltaEast * deltaEast + deltaNorth * deltaNorth);
+            }
+
+            if (perimeterMeters <= 0)
+                return 0;
+
+            var areaMeters = Math.Abs(doubleSignedArea) / 2.0;
+            var isoperimetricQuotient = 4.0 * Math.PI * areaMeters / (perimeterMeters * perimeterMeters);
+            return Math.Clamp(isoperimetricQuotient, 0, 1);
+        }
+
         private static double DegreesToRadians(double degrees) => degrees * Math.PI / 180;
         private static double RadiansToDegrees(double radians) => radians * 180 / Math.PI;
     }

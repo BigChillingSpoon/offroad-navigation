@@ -84,8 +84,18 @@ function osm2pgsql.process_way(object)
     if object.tags.highway then
         local hw = object.tags.highway
         
-        -- IMPASSABLE FOR CARS: Drop these immediately.
-        if hw == 'path' or hw == 'footway' or hw == 'cycleway' or hw == 'bridleway' or hw == 'steps' or hw == 'pedestrian' or hw == 'corridor' then
+        -- NOT ROUTABLE BY GRAPHHOPPER'S CAR GRAPH: drop so our graph matches GH's routable set.
+        -- Otherwise the skeleton can build a loop on an edge GH refuses (e.g. highway=proposed), and
+        -- GH detours far around it. This mirrors GH's ignored_highways plus car-inaccessible/not-built
+        -- classes. (The skeleton search excludes the same set at query time as a safety net.)
+        local dropped = {
+            path = true, footway = true, cycleway = true, bridleway = true, steps = true,
+            pedestrian = true, corridor = true,
+            proposed = true, construction = true, raceway = true, platform = true,
+            busway = true, bus_guideway = true, via_ferrata = true, escape = true,
+            abandoned = true, ['no'] = true,
+        }
+        if dropped[hw] then
             return -- Exit the function, do not save to database
         end
             
