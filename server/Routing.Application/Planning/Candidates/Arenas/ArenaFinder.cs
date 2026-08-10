@@ -23,6 +23,7 @@ namespace Routing.Application.Planning.Candidates.Arenas
         {
             var preferredLengthMeters = preferredLengthKm * 1000.0;
             var loopReachMeters = preferredLengthMeters * ArenaSelectionSettings.ReachFactor;
+            var minSeparationMeters = preferredLengthMeters * ArenaSelectionSettings.MinEntranceSeparationFactor;
             var minOffroadLengthMeters = preferredLengthMeters * ArenaSelectionSettings.MinOffroadDensityFactor;
 
             var candidates = await _nodeRepository.GetCandidateArenaEntrancesAsync(
@@ -30,6 +31,7 @@ namespace Routing.Application.Planning.Candidates.Arenas
                 maxDriveDistanceKm * 1000.0,
                 loopReachMeters,
                 minOffroadLengthMeters,
+                ArenaSelectionSettings.RankingLengthBlend(preferredLengthKm),
                 limit: maxEntrances * ArenaSelectionSettings.CandidateFetchMultiplier,
                 ct);
 
@@ -48,16 +50,17 @@ namespace Routing.Application.Planning.Candidates.Arenas
             if (userStartCandidate is { } userArena)
                 selected.Add(userArena.Coordinate);
 
-            // Greedy spatial diversity: take the densest arenas first, skipping any that sit within one
-            // loop reach of an already-picked entrance so the returned arenas yield genuinely different
-            // loops rather than several variations of the same one. (This also skips the user-start
-            // candidate on its second encounter, since it is 0 m from itself.)
-            foreach (var candidate in candidates.OrderByDescending(c => c.OffroadLengthMeters))
+            // Greedy spatial diversity: take the densest arenas first (by offroad-edge/intersection
+            // density, which predicts loop-ability better than raw track length), skipping any that sit
+            // within the minimum separation of an already-picked entrance so the returned arenas yield
+            // genuinely non-overlapping loops rather than several variations of the same one. (This also
+            // skips the user-start candidate on its second encounter, since it is 0 m from itself.)
+            foreach (var candidate in candidates.OrderByDescending(c => c.ArenaScore))
             {
                 if (selected.Count >= maxEntrances)
                     break;
 
-                if (selected.Any(s => GeoCalculator.CalculateDistance(s, candidate.Coordinate) < loopReachMeters))
+                if (selected.Any(s => GeoCalculator.CalculateDistance(s, candidate.Coordinate) < minSeparationMeters))
                     continue;
 
                 selected.Add(candidate.Coordinate);

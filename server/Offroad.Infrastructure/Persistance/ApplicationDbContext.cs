@@ -69,6 +69,8 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.IsRestricted).HasColumnName("is_restricted");
             entity.Property(e => e.ElevationGainMeters).HasColumnName("elevation_gain");
             entity.Property(e => e.IsOffroad).HasColumnName("is_offroad");
+            entity.Property(e => e.TrackType).HasColumnName("tracktype");
+            entity.Property(e => e.Highway).HasColumnName("highway");
             entity.Property(e => e.Geom)
                   .HasColumnName("geom")
                   .HasColumnType("geometry(LineString, 4326)");

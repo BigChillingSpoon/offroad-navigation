@@ -59,6 +59,20 @@ public sealed class EdgeRepository : IEdgeRepository
         e.IsRestricted,
         e.ElevationGainMeters,
         e.IsOffroad,
-        e.Geom?.Coordinates.Select(c => new Coordinate(c.Y, c.X)).ToList()
+        e.Geom?.Coordinates.Select(c => new Coordinate(c.Y, c.X)).ToList(),
+        ParseGrade(e.TrackType),
+        e.Highway
     );
+
+    // gis.edges.tracktype is OSM 'grade1'..'grade5' (or null for non-graded/unknown ways).
+    // Maps to 1..5; 0 means "no known grade".
+    private static byte ParseGrade(string? trackType) => trackType switch
+    {
+        "grade1" => 1,
+        "grade2" => 2,
+        "grade3" => 3,
+        "grade4" => 4,
+        "grade5" => 5,
+        _ => 0
+    };
 }
