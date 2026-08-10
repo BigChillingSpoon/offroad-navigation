@@ -8,9 +8,20 @@ namespace Routing.Infrastructure.Persistence.Repositories;
 
 public sealed class NodeRepository : INodeRepository
 {
-    // Rough conversion used only for the index-accelerated bounding-box pre-filter below;
-    // the exact geodesic decision is still made by ST_DWithin on the geography cast.
-    private const double MetersPerDegree = 111320.0;
+    // Meters per degree of latitude, used only to size the index-accelerated bounding-box pre-filters
+    // below (the exact geodesic decision is still made by ST_DWithin on the geography cast). A degree of
+    // longitude is shorter by cos(latitude), so east-west expansion must be divided by cos(lat); without
+    // that the box is too narrow away from the equator (~0.66x at 49N) and silently drops valid
+    // east/west rows before ST_DWithin can see them. The box only needs to be a superset of the exact
+    // radius, so this approximate constant is fine.
+    private const double MetersPerDegreeLatitude = 111320.0;
+
+    // Floors the cos(latitude) divisor so the longitude expansion can never blow up or invert at
+    // extreme latitudes. Irrelevant for the Czech data (~0.66 at 49N), a cheap safety net regardless.
+    private const double MinCosLatitude = 0.01;
+
+    private static double CosLatitude(double latitudeDegrees) =>
+        Math.Max(Math.Cos(latitudeDegrees * Math.PI / 180.0), MinCosLatitude);
 
     private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
@@ -25,7 +36,8 @@ public sealed class NodeRepository : INodeRepository
         // entrances are searched in parallel via Task.WhenAll), and DbContext is not thread-safe.
         await using var dbContext = await _contextFactory.CreateDbContextAsync(ct);
 
-        var radiusDegrees = radiusMeters / MetersPerDegree;
+        var latDegrees = radiusMeters / MetersPerDegreeLatitude;
+        var lonDegrees = latDegrees / CosLatitude(center.Latitude);
 
         // gis.nodes.geom is a plain geometry(Point, 4326) column, not geography, so ST_Distance/.Distance()
         // would return degrees rather than meters. The "&&"/ST_Expand check is an index-accelerated
@@ -37,7 +49,7 @@ public sealed class NodeRepository : INodeRepository
             .FromSqlInterpolated($@"
                 SELECT node_id, geom, is_entry_point, altitude
                 FROM gis.nodes
-                WHERE geom && ST_Expand(ST_SetSRID(ST_MakePoint({center.Longitude}, {center.Latitude}), 4326), {radiusDegrees})
+                WHERE geom && ST_Expand(ST_SetSRID(ST_MakePoint({center.Longitude}, {center.Latitude}), 4326), {lonDegrees}, {latDegrees})
                   AND ST_DWithin(
                       geom::geography,
                       ST_SetSRID(ST_MakePoint({center.Longitude}, {center.Latitude}), 4326)::geography,
@@ -67,9 +79,15 @@ public sealed class NodeRepository : INodeRepository
 
         // Degrees for the index-accelerated bounding-box pre-filters (see GetNodesNearAsync above for
         // why: the "&&"/ST_Expand check rides the GiST index, then ST_DWithin on the geography cast
-        // makes the exact meter-based decision the geometry column alone can't).
-        var driveDegrees = driveRadiusMeters / MetersPerDegree;
-        var reachDegrees = loopReachMeters / MetersPerDegree;
+        // makes the exact meter-based decision the geometry column alone can't). Longitude is scaled by
+        // cos(latitude) so the box stays a superset of the true radius away from the equator.
+        var cosCenter = CosLatitude(center.Latitude);
+        var driveLatDegrees = driveRadiusMeters / MetersPerDegreeLatitude;
+        var driveLonDegrees = driveLatDegrees / cosCenter;
+
+        // The reach box is expanded around each candidate, whose latitude varies, so its longitude
+        // half-width is divided by that candidate's own cos(latitude) inside the query (below).
+        var reachLatDegrees = loopReachMeters / MetersPerDegreeLatitude;
 
         // Candidate entrances = every is_entry_point node in drive range, plus the user's own start
         // (so the caller can pick a no-drive loop when the user is already inside offroad terrain).
@@ -84,7 +102,7 @@ public sealed class NodeRepository : INodeRepository
                     SELECT n.geom AS g
                     FROM gis.nodes n, origin o
                     WHERE n.is_entry_point
-                      AND n.geom && ST_Expand(o.g, {driveDegrees})
+                      AND n.geom && ST_Expand(o.g, {driveLonDegrees}, {driveLatDegrees})
                       AND ST_DWithin(n.geom::geography, o.g::geography, {driveRadiusMeters})
                     UNION ALL
                     SELECT o.g FROM origin o
@@ -99,7 +117,7 @@ public sealed class NodeRepository : INodeRepository
                         COALESCE(SUM(h.edge_count), 0)   AS edge_cnt
                     FROM candidates c
                     LEFT JOIN gis.heatmap h
-                      ON h.cell_geom && ST_Expand(c.g, {reachDegrees})
+                      ON h.cell_geom && ST_Expand(c.g, {reachLatDegrees} / GREATEST(cos(radians(ST_Y(c.g))), {MinCosLatitude}), {reachLatDegrees})
                      AND ST_DWithin(h.cell_geom::geography, c.g::geography, {loopReachMeters})
                     GROUP BY c.g
                 ),
