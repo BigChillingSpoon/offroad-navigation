@@ -21,9 +21,4 @@
     <PackageReference Include="NetTopologySuite.IO.GeoJSON" Version="4.0.0" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Planning\Planner\" />
-    <Folder Include="Ports\DTOs\" />
-  </ItemGroup>
-
 </Project>

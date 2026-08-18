@@ -14,11 +14,5 @@ namespace Routing.Application.Planning.Goals
         /// </returns>
         /// </summary>
         bool IsSatisfied(TCandidate candidate, TIntent intent);
-
-        /// <summary>
-        /// How close we are to our goal (heuristics).
-        /// Higher = better.
-        /// </summary>
-        double GetGoalScore(TCandidate candidate, TIntent intent);
     }
 }

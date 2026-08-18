@@ -13,11 +13,12 @@ namespace Routing.Application.Planning.Goals
             if (candidate.Segments.Any(s => s.DistanceMeters <= 0))
                 return false;
 
+            // Check for not rounded loops
             for (int i = 1; i < candidate.Segments.Count; i++)
             {
                 var previous = candidate.Segments[i - 1];
                 var current = candidate.Segments[i];
-
+                
                 if (previous.ToIndex != current.FromIndex)
                     return false;
             }
@@ -33,11 +34,6 @@ namespace Routing.Application.Planning.Goals
                 return false;
 
             return true;
-        }
-
-        public double GetGoalScore(LoopTripCandidate candidate, LoopIntent intent)
-        {
-            return 0d;
         }
     }
 }

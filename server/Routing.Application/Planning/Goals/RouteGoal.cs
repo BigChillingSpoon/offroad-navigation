@@ -31,10 +31,5 @@ namespace Routing.Application.Planning.Goals
 
             return true;
         }
-
-        public double GetGoalScore(TripCandidate candidate, RouteIntent intent)
-        {
-            return 0d;
-        }
     }
 }
